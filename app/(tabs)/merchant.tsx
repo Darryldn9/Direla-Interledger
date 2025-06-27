@@ -8,8 +8,20 @@ import {
   Switch,
   Alert,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChartBar as BarChart3, DollarSign, Users, TrendingUp, ShoppingCart, QrCode, Wifi, Download, FileText, Calculator, Bell, Settings } from 'lucide-react-native';
+import { 
+  DollarSign, 
+  Users, 
+  TrendingUp, 
+  ShoppingCart, 
+  QrCode, 
+  Wifi, 
+  Download, 
+  FileText, 
+  Calculator, 
+  Bell, 
+  Settings 
+} from 'lucide-react-native';
+import QRCodeGenerator from '../../components/QRCodeGenerator';
 
 interface SalesData {
   period: string;
@@ -27,12 +39,12 @@ interface RecentTransaction {
 }
 
 export default function MerchantScreen() {
-  const insets = useSafeAreaInsets();
   const [isOnline, setIsOnline] = useState(true);
   const [isAcceptingPayments, setIsAcceptingPayments] = useState(true);
   const [todaysRevenue] = useState(1247.50);
   const [monthlyRevenue] = useState(18420.75);
   const [totalCustomers] = useState(89);
+  const [showQRGenerator, setShowQRGenerator] = useState(false);
 
   const salesData: SalesData[] = [
     { period: 'Today', amount: 1247.50, transactions: 23 },
@@ -85,10 +97,11 @@ export default function MerchantScreen() {
   };
 
   const generateQRCode = () => {
-    Alert.alert(
-      'QR Code Generated',
-      'Your payment QR code has been generated. Customers can scan this code to make payments directly to your account.',
-    );
+    setShowQRGenerator(true);
+  };
+
+  const handleQRGenerated = (qrData: any) => {
+    console.log('QR Code generated:', qrData);
   };
 
   const downloadReport = () => {
@@ -98,11 +111,26 @@ export default function MerchantScreen() {
     );
   };
 
+  if (showQRGenerator) {
+    return (
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: 70 }]}>
+          <TouchableOpacity onPress={() => setShowQRGenerator(false)}>
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Generate QR Code</Text>
+          <View style={{ width: 50 }} />
+        </View>
+        <QRCodeGenerator onQRGenerated={handleQRGenerated} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView>
         {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
+        <View style={[styles.header, { paddingTop: 70 }]}>
           <View>
             <Text style={styles.headerTitle}>Mama Thandi's Spaza</Text>
             <Text style={styles.headerSubtitle}>Business Dashboard</Text>
@@ -137,18 +165,18 @@ export default function MerchantScreen() {
         <View style={styles.revenueContainer}>
           <View style={styles.revenueCard}>
             <DollarSign size={24} color="#0C7C59" />
-            <Text style={styles.revenueAmount} numberOfLines={1}>R {todaysRevenue.toFixed(2)}</Text>
-            <Text style={styles.revenueLabel} numberOfLines={2}>Today's Revenue</Text>
+            <Text style={styles.revenueAmount}>R {todaysRevenue.toFixed(2)}</Text>
+            <Text style={styles.revenueLabel}>Today's Revenue</Text>
           </View>
           <View style={styles.revenueCard}>
             <TrendingUp size={24} color="#3498DB" />
-            <Text style={styles.revenueAmount} numberOfLines={1}>R {monthlyRevenue.toFixed(2)}</Text>
-            <Text style={styles.revenueLabel} numberOfLines={2}>This Month</Text>
+            <Text style={styles.revenueAmount}>R {monthlyRevenue.toFixed(2)}</Text>
+            <Text style={styles.revenueLabel}>This Month</Text>
           </View>
           <View style={styles.revenueCard}>
             <Users size={24} color="#9B59B6" />
-            <Text style={styles.revenueAmount} numberOfLines={1}>{totalCustomers}</Text>
-            <Text style={styles.revenueLabel} numberOfLines={2}>Total Customers</Text>
+            <Text style={styles.revenueAmount}>{totalCustomers}</Text>
+            <Text style={styles.revenueLabel}>Total Customers</Text>
           </View>
         </View>
 
@@ -264,7 +292,7 @@ export default function MerchantScreen() {
         </View>
         
         {/* Bottom Safe Area Spacer */}
-        <View style={{ height: insets.bottom + 10 }} />
+        <View style={{ height: 20 }} />
       </ScrollView>
     </View>
   );
@@ -285,12 +313,11 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontFamily: 'Inter-Bold',
+    fontWeight: 'bold',
     color: '#FFFFFF',
   },
   headerSubtitle: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
     color: '#FFFFFF',
     opacity: 0.8,
   },
@@ -326,7 +353,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
   },
   statusToggle: {
     flexDirection: 'row',
@@ -335,7 +362,7 @@ const styles = StyleSheet.create({
   },
   toggleLabel: {
     fontSize: 14,
-    fontFamily: 'Inter-Medium',
+    fontWeight: '500',
     color: '#2C3E50',
   },
   revenueContainer: {
@@ -357,19 +384,18 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   revenueAmount: {
-    fontSize: 16,
-    fontFamily: 'Inter-Bold',
+    fontSize: 18,
+    fontWeight: 'bold',
     color: '#2C3E50',
     marginTop: 8,
     textAlign: 'center',
   },
   revenueLabel: {
-    fontSize: 11,
-    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    fontWeight: '500',
     color: '#7F8C8D',
     textAlign: 'center',
     marginTop: 4,
-    lineHeight: 14,
   },
   quickActionsContainer: {
     paddingHorizontal: 20,
@@ -377,7 +403,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: '#2C3E50',
     marginBottom: 16,
   },
@@ -392,7 +418,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 12,
-    fontFamily: 'Inter-Medium',
+    fontWeight: '500',
     color: '#2C3E50',
     textAlign: 'center',
   },
@@ -419,18 +445,17 @@ const styles = StyleSheet.create({
   },
   analyticsPeriod: {
     fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: '#2C3E50',
   },
   analyticsTransactions: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
     color: '#7F8C8D',
     marginTop: 2,
   },
   analyticsAmount: {
     fontSize: 18,
-    fontFamily: 'Inter-Bold',
+    fontWeight: 'bold',
     color: '#0C7C59',
   },
   transactionsContainer: {
@@ -445,7 +470,7 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: 14,
-    fontFamily: 'Inter-Medium',
+    fontWeight: '500',
     color: '#0C7C59',
   },
   transactionItem: {
@@ -467,12 +492,11 @@ const styles = StyleSheet.create({
   },
   customerName: {
     fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: '#2C3E50',
   },
   transactionDetails: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
     color: '#7F8C8D',
     marginTop: 2,
   },
@@ -481,7 +505,7 @@ const styles = StyleSheet.create({
   },
   amountText: {
     fontSize: 16,
-    fontFamily: 'Inter-Bold',
+    fontWeight: 'bold',
     color: '#0C7C59',
     marginBottom: 4,
   },
@@ -510,7 +534,7 @@ const styles = StyleSheet.create({
   },
   alertTitle: {
     fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: '#2C3E50',
   },
   alertItem: {
@@ -518,7 +542,6 @@ const styles = StyleSheet.create({
   },
   alertText: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
     color: '#E67E22',
   },
   manageInventoryButton: {
@@ -529,7 +552,7 @@ const styles = StyleSheet.create({
   },
   manageInventoryText: {
     fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: '#0C7C59',
   },
   benefitsContainer: {
@@ -541,13 +564,12 @@ const styles = StyleSheet.create({
   },
   benefitsTitle: {
     fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: '#0C7C59',
     marginBottom: 8,
   },
   benefitsDescription: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
     color: '#0C7C59',
     marginBottom: 12,
     lineHeight: 20,
@@ -557,7 +579,11 @@ const styles = StyleSheet.create({
   },
   benefitText: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
     color: '#0C7C59',
   },
-});
+  backButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+}); 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TextInput,
   ScrollView,
   Alert,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -19,6 +20,7 @@ import {
   ArrowRight,
   MapPin,
 } from 'lucide-react-native';
+import { CameraView, Camera } from 'expo-camera';
 
 interface QuickContact {
   id: string;
@@ -37,9 +39,14 @@ interface NearbyMerchant {
 
 export default function PayScreen() {
   const insets = useSafeAreaInsets();
-  const [paymentMethod, setPaymentMethod] = useState<'qr' | 'whatsapp' | 'tap' | 'contacts'>('qr');
+  const [paymentMethod, setPaymentMethod] = useState<'qr' | 'whatsapp' | 'tap' | 'contacts' | ''>('');
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
+  const [showQRScanner, setShowQRScanner] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [scanned, setScanned] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const scanningRef = useRef(false); // Synchronous flag to prevent multiple scans
 
   const quickContacts: QuickContact[] = [
     { id: '1', name: 'Thabo', phone: '+27123456789', avatar: '👨🏾' },
@@ -56,6 +63,11 @@ export default function PayScreen() {
   ];
 
   const handlePayment = () => {
+    if (!paymentMethod) {
+      Alert.alert('Select Payment Method', 'Please choose a payment method first');
+      return;
+    }
+
     if (!amount || parseFloat(amount) <= 0) {
       Alert.alert('Error', 'Please enter a valid amount');
       return;
@@ -68,7 +80,7 @@ export default function PayScreen() {
       timestamp: new Date().toISOString(),
     };
 
-    // Simulate Interledger processing
+    // Simulate Interledger processing for other payment methods
     Alert.alert(
       'Payment Initiated',
       `Processing R${amount} payment via ${paymentMethod.toUpperCase()}. Transaction will be processed through Interledger for optimal routing.`,
@@ -81,13 +93,22 @@ export default function PayScreen() {
     );
   };
 
+  const handleQRPaymentComplete = (result: any) => {
+    setShowQRScanner(false);
+    Alert.alert(
+      'Payment Complete! 🎉',
+      `✅ Amount: ${result.currency} ${result.amount}\n✅ Method: ${result.method}\n✅ Transaction ID: ${result.transactionId}\n\n💰 Payment sent successfully via Open Payments network!`,
+      [{ text: 'OK' }]
+    );
+  };
+
   const PaymentMethodButton = ({ 
     method, 
     icon, 
     title, 
     description 
   }: { 
-    method: typeof paymentMethod, 
+    method: 'qr' | 'whatsapp' | 'tap' | 'contacts', 
     icon: React.ReactNode, 
     title: string, 
     description: string 
@@ -97,7 +118,15 @@ export default function PayScreen() {
         styles.methodButton,
         paymentMethod === method && styles.methodButtonActive
       ]}
-      onPress={() => setPaymentMethod(method)}
+      onPress={() => {
+        if (method === 'qr') {
+          // Directly open QR scanner
+          setShowQRScanner(true);
+        } else {
+          // Select other payment methods normally
+          setPaymentMethod(method);
+        }
+      }}
     >
       <View style={[
         styles.methodIcon,
@@ -124,6 +153,365 @@ export default function PayScreen() {
       )}
     </TouchableOpacity>
   );
+
+  const requestCameraPermission = async () => {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    setHasPermission(status === 'granted');
+  };
+
+  const pollForPaymentCompletion = async (continueToken: string, continueUri: string, quoteId: string, paymentData: any, attempts: number = 0) => {
+    const maxAttempts = 20; // Poll for up to 2 minutes (6 seconds * 20)
+    
+    if (attempts >= maxAttempts) {
+      Alert.alert(
+        'Authorization Timeout',
+        'Payment authorization took too long. Please try again.',
+        [
+          {
+            text: 'Retry',
+            onPress: () => {
+              scanningRef.current = false;
+              setScanned(false);
+              setIsProcessing(false);
+              setShowQRScanner(false);
+            }
+          }
+        ]
+      );
+      return;
+    }
+
+    try {
+      // Check if user has completed authorization by trying to complete the payment
+      const response = await fetch('http://192.168.10.56:3001/api/payment/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          continueToken,
+          continueUri,
+          quoteId,
+          description: `Dinela payment of ${paymentData.currency} ${paymentData.amount}`
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Payment completed successfully!
+        handleQRPaymentComplete({
+          success: true,
+          amount: paymentData.amount,
+          currency: paymentData.currency,
+          transactionId: result.outgoingPayment.id,
+          method: 'OPEN_PAYMENTS',
+          quoteId: quoteId,
+          fee: result.outgoingPayment.debitAmount?.value || 0,
+          status: result.outgoingPayment.state
+        });
+        setShowQRScanner(false);
+
+        Alert.alert(
+          'Payment Sent Successfully! 🎉',
+          `✅ Amount: ${paymentData.currency} ${paymentData.amount}\n✅ Payment ID: ${result.outgoingPayment.id.split('/').pop()}\n✅ Status: Completed\n\n🔗 Transaction processed via Interledger Protocol\n💰 Settlement: Instant`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                scanningRef.current = false;
+                setScanned(false);
+                setIsProcessing(false);
+                setShowQRScanner(false);
+              }
+            }
+          ]
+        );
+      } else {
+        // Continue polling
+        setTimeout(() => {
+          pollForPaymentCompletion(continueToken, continueUri, quoteId, paymentData, attempts + 1);
+        }, 6000);
+      }
+    } catch (error) {
+      // Continue polling on error
+      setTimeout(() => {
+        pollForPaymentCompletion(continueToken, continueUri, quoteId, paymentData, attempts + 1);
+      }, 6000);
+    }
+  };
+
+  const processOpenPayment = async (paymentData: any) => {
+    try {
+      console.log('🔄 Starting Open Payments flow...');
+      
+             // Step 1: Create quote
+       const quoteResponse = await fetch('http://192.168.10.56:3001/api/payment/quote', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           walletAddress: paymentData.walletAddress || paymentData.paymentId?.split('/incoming-payments')[0],
+           amount: paymentData.amount,
+           assetCode: paymentData.currency,
+           assetScale: 2,
+           incomingPaymentId: paymentData.paymentId // Use existing incoming payment if available
+         })
+       });
+
+      if (!quoteResponse.ok) {
+        throw new Error(`Quote failed: ${quoteResponse.status}`);
+      }
+
+      const quoteResult = await quoteResponse.json();
+      console.log('✅ Quote created:', quoteResult);
+
+             // Step 2: Show confirmation with real quote details
+       const walletName = (paymentData.walletAddress || paymentData.paymentId)?.split('/').pop() || 'Unknown';
+       Alert.alert(
+         'Confirm Payment',
+         `💰 Amount: ${paymentData.currency} ${paymentData.amount}\n💸 Fee: ${quoteResult.quote.sendAmount.value / Math.pow(10, quoteResult.quote.sendAmount.assetScale)} ${quoteResult.quote.sendAmount.assetCode}\n🏦 To: ${walletName}\n\n✅ Quote ID: ${quoteResult.quote.id}\n🔗 Payment ID: ${paymentData.paymentId || 'Direct wallet'}`,
+                    [
+             { text: 'Cancel', onPress: () => {
+               scanningRef.current = false;
+               setScanned(false);
+               setShowQRScanner(false);
+             }},
+             {
+               text: 'Authorize Payment',
+               onPress: async () => {
+              try {
+                console.log('🔄 Processing payment...');
+                
+                                 // Step 3: Send payment
+                 const paymentResponse = await fetch('http://192.168.10.56:3001/api/payment/send', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({
+                     quoteId: quoteResult.quote.id,
+                     walletAddress: paymentData.walletAddress || paymentData.paymentId?.split('/incoming-payments')[0],
+                     incomingPaymentId: paymentData.paymentId
+                   })
+                 });
+
+                const paymentResult = await paymentResponse.json();
+                console.log('Payment result:', paymentResult);
+
+                if (paymentResult.success) {
+                  handleQRPaymentComplete({
+                    success: true,
+                    amount: paymentData.amount,
+                    currency: paymentData.currency,
+                    transactionId: paymentResult.outgoingPayment.id,
+                    method: 'OPEN_PAYMENTS',
+                    quoteId: quoteResult.quote.id,
+                    fee: quoteResult.quote.sendAmount.value,
+                    status: paymentResult.outgoingPayment.state
+                  });
+                  setShowQRScanner(false);
+                  setIsProcessing(false);
+                } else if (paymentResult.requiresAuth) {
+                  // Payment requires user authorization
+                  Alert.alert(
+                    'Payment Authorization Required 🔐',
+                    `To complete this payment, you need to authorize it in your browser.\n\n💰 Amount: ${paymentData.currency} ${paymentData.amount}\n\nThis is a security feature of Open Payments.`,
+                    [
+                      {
+                        text: 'Cancel',
+                        style: 'cancel',
+                        onPress: () => {
+                          scanningRef.current = false;
+                          setScanned(false);
+                          setIsProcessing(false);
+                          setShowQRScanner(false);
+                        }
+                      },
+                      {
+                        text: 'Authorize Payment',
+                        onPress: async () => {
+                          try {
+                            // Open authorization URL in browser
+                            await Linking.openURL(paymentResult.authUrl);
+                            
+                            // Start polling for payment completion
+                            setTimeout(() => {
+                              pollForPaymentCompletion(paymentResult.continueToken, paymentResult.continueUri, quoteResult.quote.id, paymentData);
+                            }, 5000); // Give user time to authorize
+                          } catch (error) {
+                            console.error('Failed to open authorization URL:', error);
+                            Alert.alert('Error', 'Could not open authorization URL. Please try again.');
+                          }
+                        }
+                      }
+                    ]
+                  );
+                } else {
+                   Alert.alert('Payment Failed', paymentResult.error || 'Unknown error occurred', [
+                     { text: 'OK', onPress: () => {
+                       scanningRef.current = false;
+                       setScanned(false);
+                       setIsProcessing(false);
+                       setShowQRScanner(false);
+                     }}
+                   ]);
+                 }
+                             } catch (error) {
+                 console.error('Payment error:', error);
+                 Alert.alert('Payment Failed', `Error: ${error instanceof Error ? error.message : 'Unknown error'}`, [
+                   { text: 'OK', onPress: () => {
+                     scanningRef.current = false;
+                     setScanned(false);
+                     setIsProcessing(false);
+                     setShowQRScanner(false);
+                   }}
+                 ]);
+               }
+            }
+          }
+        ]
+      );
+         } catch (error) {
+       console.error('Open Payments error:', error);
+       Alert.alert('Payment Error', `Failed to process payment: ${error instanceof Error ? error.message : 'Unknown error'}`, [
+         { text: 'OK', onPress: () => {
+           scanningRef.current = false;
+           setScanned(false);
+           setIsProcessing(false);
+           setShowQRScanner(false);
+         }}
+       ]);
+     }
+  };
+
+  const handleBarCodeScanned = ({ data }: { data: string }) => {
+    // Immediate synchronous check to prevent multiple scans
+    if (scanned || isProcessing || scanningRef.current) return;
+    
+    // Immediately set synchronous flag AND state flags
+    scanningRef.current = true;
+    setScanned(true);
+    setIsProcessing(true);
+    
+    try {
+      const scannedData = JSON.parse(data);
+      
+      if (scannedData.type === 'open-payments' || scannedData.type === 'open_payments_request') {
+        console.log('📱 QR Code scanned:', scannedData);
+        // Close scanner immediately before processing
+        setShowQRScanner(false);
+        // Process payment after scanner is closed
+        setTimeout(() => processOpenPayment(scannedData), 100);
+      } else {
+        Alert.alert('Invalid QR Code', 'Not a valid Open Payments QR code.', [
+          { text: 'OK', onPress: () => {
+            scanningRef.current = false;
+            setScanned(false);
+            setIsProcessing(false);
+            setShowQRScanner(false);
+          }}
+        ]);
+      }
+    } catch (error) {
+      console.error('QR scan error:', error);
+      Alert.alert('Invalid QR Code', 'Could not parse QR code data.', [
+        { text: 'OK', onPress: () => {
+          scanningRef.current = false;
+          setScanned(false);
+          setIsProcessing(false);
+          setShowQRScanner(false);
+        }}
+      ]);
+    }
+  };
+
+  if (showQRScanner) {
+    if (hasPermission === null) {
+      requestCameraPermission();
+      return (
+        <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: 'white', fontSize: 18 }}>Requesting camera permission...</Text>
+        </View>
+      );
+    }
+
+    if (hasPermission === false) {
+      return (
+        <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ color: 'white', fontSize: 18, textAlign: 'center', marginBottom: 20 }}>
+            Camera access denied. Please allow camera access in Settings.
+          </Text>
+          <TouchableOpacity 
+            onPress={() => setShowQRScanner(false)}
+            style={{ backgroundColor: '#0C7C59', padding: 15, borderRadius: 8 }}
+          >
+            <Text style={{ color: 'white' }}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
+        <CameraView
+          style={{ flex: 1 }}
+          facing="back"
+          onBarcodeScanned={(scanned || isProcessing || scanningRef.current) ? undefined : handleBarCodeScanned}
+        >
+          <View style={{ 
+            flex: 1, 
+            backgroundColor: 'rgba(0,0,0,0.5)', 
+            justifyContent: 'center', 
+            alignItems: 'center' 
+          }}>
+            <View style={{
+              width: 250,
+              height: 250,
+              borderWidth: 2,
+              borderColor: '#0C7C59',
+              borderRadius: 12,
+              backgroundColor: 'transparent',
+            }} />
+            <Text style={{
+              color: '#FFFFFF',
+              fontSize: 18,
+              textAlign: 'center',
+              marginTop: 20,
+              paddingHorizontal: 20,
+            }}>
+              Point your camera at a QR code to scan
+            </Text>
+            <TouchableOpacity 
+              onPress={() => setShowQRScanner(false)}
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                paddingHorizontal: 20,
+                paddingVertical: 12,
+                borderRadius: 8,
+                marginTop: 40,
+              }}
+            >
+              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>Cancel</Text>
+            </TouchableOpacity>
+            {scanned && (
+              <TouchableOpacity 
+                onPress={() => {
+                  scanningRef.current = false;
+                  setScanned(false);
+                  setIsProcessing(false);
+                }}
+                style={{
+                  backgroundColor: '#0C7C59',
+                  paddingHorizontal: 20,
+                  paddingVertical: 12,
+                  borderRadius: 8,
+                  marginTop: 10,
+                }}
+              >
+                <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>Scan Again</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </CameraView>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -246,9 +634,9 @@ export default function PayScreen() {
         <TouchableOpacity style={styles.payButton} onPress={handlePayment}>
           <Zap size={20} color="#FFFFFF" />
           <Text style={styles.payButtonText}>
-            {paymentMethod === 'qr' ? 'Generate QR Code' :
-             paymentMethod === 'whatsapp' ? 'Send via WhatsApp' :
+            {paymentMethod === 'whatsapp' ? 'Send via WhatsApp' :
              paymentMethod === 'tap' ? 'Ready to Tap' :
+             paymentMethod === 'contacts' ? 'Send to Contact' :
              'Send Payment'}
           </Text>
         </TouchableOpacity>
