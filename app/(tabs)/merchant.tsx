@@ -8,6 +8,7 @@ import {
   Switch,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChartBar as BarChart3, DollarSign, Users, TrendingUp, ShoppingCart, QrCode, Wifi, Download, FileText, Calculator, Bell, Settings } from 'lucide-react-native';
 
 interface SalesData {
@@ -26,6 +27,7 @@ interface RecentTransaction {
 }
 
 export default function MerchantScreen() {
+  const insets = useSafeAreaInsets();
   const [isOnline, setIsOnline] = useState(true);
   const [isAcceptingPayments, setIsAcceptingPayments] = useState(true);
   const [todaysRevenue] = useState(1247.50);
@@ -100,7 +102,7 @@ export default function MerchantScreen() {
     <View style={styles.container}>
       <ScrollView>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
           <View>
             <Text style={styles.headerTitle}>Mama Thandi's Spaza</Text>
             <Text style={styles.headerSubtitle}>Business Dashboard</Text>
@@ -260,6 +262,9 @@ export default function MerchantScreen() {
             <Text style={styles.benefitText}>• Offline transaction sync when reconnected</Text>
           </View>
         </View>
+        
+        {/* Bottom Safe Area Spacer */}
+        <View style={{ height: insets.bottom + 10 }} />
       </ScrollView>
     </View>
   );
@@ -272,8 +277,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#0C7C59',
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 30,
     paddingHorizontal: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   QrCode,
   MessageCircle,
@@ -35,6 +36,7 @@ interface NearbyMerchant {
 }
 
 export default function PayScreen() {
+  const insets = useSafeAreaInsets();
   const [paymentMethod, setPaymentMethod] = useState<'qr' | 'whatsapp' | 'tap' | 'contacts'>('qr');
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
@@ -119,7 +121,7 @@ export default function PayScreen() {
     <View style={styles.container}>
       <ScrollView>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
           <Text style={styles.headerTitle}>Send Payment</Text>
           <Text style={styles.headerSubtitle}>Choose your payment method</Text>
         </View>
@@ -250,6 +252,9 @@ export default function PayScreen() {
             Payments are automatically routed through the most cost-effective network via Interledger Protocol, ensuring lowest fees and fastest settlement.
           </Text>
         </View>
+        
+        {/* Bottom Safe Area Spacer */}
+        <View style={{ height: insets.bottom + 10 }} />
       </ScrollView>
     </View>
   );
@@ -262,8 +267,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#FFFFFF',
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 30,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',

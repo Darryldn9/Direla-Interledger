@@ -1,7 +1,10 @@
 import { Tabs } from 'expo-router';
 import { Wallet, ShoppingCart, Users, TrendingUp, Settings } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tabs
       screenOptions={{
@@ -13,8 +16,8 @@ export default function TabLayout() {
           borderTopWidth: 1,
           borderTopColor: '#E5E5E5',
           paddingTop: 8,
-          paddingBottom: 8,
-          height: 70,
+          paddingBottom: Math.max(insets.bottom, 8),
+          height: 70 + Math.max(insets.bottom - 8, 0),
         },
         tabBarLabelStyle: {
           fontSize: 12,

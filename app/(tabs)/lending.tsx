@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TrendingUp, Shield, Clock, Users, DollarSign, Award, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, ArrowRight } from 'lucide-react-native';
 
 interface LoanOffer {
@@ -32,6 +33,7 @@ interface LendingOpportunity {
 }
 
 export default function LendingScreen() {
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<'borrow' | 'lend'>('borrow');
   const [loanAmount, setLoanAmount] = useState('');
   const [creditScore] = useState(742); // Based on transaction history
@@ -131,7 +133,7 @@ export default function LendingScreen() {
     <View style={styles.container}>
       <ScrollView>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
           <Text style={styles.headerTitle}>Lending Hub</Text>
           <Text style={styles.headerSubtitle}>Powered by community trust</Text>
         </View>
@@ -310,6 +312,9 @@ export default function LendingScreen() {
             </View>
           </>
         )}
+        
+        {/* Bottom Safe Area Spacer */}
+        <View style={{ height: insets.bottom + 10 }} />
       </ScrollView>
     </View>
   );
@@ -322,8 +327,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#FFFFFF',
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 30,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',

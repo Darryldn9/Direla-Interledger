@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Eye,
   EyeOff,
@@ -30,6 +31,7 @@ interface Transaction {
 }
 
 export default function WalletScreen() {
+  const insets = useSafeAreaInsets();
   const [showBalance, setShowBalance] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -103,7 +105,7 @@ export default function WalletScreen() {
         }
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
           <View style={styles.headerTop}>
             <Text style={styles.greeting}>Sawubona, Nomsa!</Text>
             <View style={styles.statusContainer}>
@@ -205,6 +207,9 @@ export default function WalletScreen() {
             ))}
           </View>
         </View>
+        
+        {/* Bottom Safe Area Spacer */}
+        <View style={{ height: insets.bottom + 10 }} />
       </ScrollView>
     </View>
   );
@@ -217,8 +222,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#0C7C59',
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 30,
     paddingHorizontal: 20,
   },
   headerTop: {
