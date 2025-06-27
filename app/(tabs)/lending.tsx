@@ -254,18 +254,18 @@ export default function LendingScreen() {
             <View style={styles.lendingStats}>
               <View style={styles.statCard}>
                 <DollarSign size={24} color="#0C7C59" />
-                <Text style={styles.statValue}>R 12,450</Text>
-                <Text style={styles.statLabel}>Currently Lent</Text>
+                <Text style={styles.statValue} numberOfLines={2} adjustsFontSizeToFit={true}>R 12,450</Text>
+                <Text style={styles.statLabel} numberOfLines={2}>Currently Lent</Text>
               </View>
               <View style={styles.statCard}>
                 <Award size={24} color="#F1C40F" />
-                <Text style={styles.statValue}>15.2%</Text>
-                <Text style={styles.statLabel}>Avg Return</Text>
+                <Text style={styles.statValue} numberOfLines={1}>15.2%</Text>
+                <Text style={styles.statLabel} numberOfLines={2}>Avg Return</Text>
               </View>
               <View style={styles.statCard}>
                 <Shield size={24} color="#3498DB" />
-                <Text style={styles.statValue}>98.5%</Text>
-                <Text style={styles.statLabel}>Repayment Rate</Text>
+                <Text style={styles.statValue} numberOfLines={1}>98.5%</Text>
+                <Text style={styles.statLabel} numberOfLines={2}>Repayment Rate</Text>
               </View>
             </View>
 
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    padding: 16,
+    padding: 12,
     borderRadius: 12,
     alignItems: 'center',
     elevation: 2,
@@ -575,19 +575,22 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
+    minHeight: 90,
   },
   statValue: {
-    fontSize: 20,
+    fontSize: 16,
     fontFamily: 'Inter-Bold',
     color: '#2C3E50',
     marginTop: 8,
+    textAlign: 'center',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter-Regular',
     color: '#7F8C8D',
     textAlign: 'center',
     marginTop: 4,
+    lineHeight: 14,
   },
   opportunitiesContainer: {
     paddingHorizontal: 20,

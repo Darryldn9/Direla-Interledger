@@ -137,18 +137,18 @@ export default function MerchantScreen() {
         <View style={styles.revenueContainer}>
           <View style={styles.revenueCard}>
             <DollarSign size={24} color="#0C7C59" />
-            <Text style={styles.revenueAmount}>R {todaysRevenue.toFixed(2)}</Text>
-            <Text style={styles.revenueLabel}>Today's Revenue</Text>
+            <Text style={styles.revenueAmount} numberOfLines={1}>R {todaysRevenue.toFixed(2)}</Text>
+            <Text style={styles.revenueLabel} numberOfLines={2}>Today's Revenue</Text>
           </View>
           <View style={styles.revenueCard}>
             <TrendingUp size={24} color="#3498DB" />
-            <Text style={styles.revenueAmount}>R {monthlyRevenue.toFixed(2)}</Text>
-            <Text style={styles.revenueLabel}>This Month</Text>
+            <Text style={styles.revenueAmount} numberOfLines={1}>R {monthlyRevenue.toFixed(2)}</Text>
+            <Text style={styles.revenueLabel} numberOfLines={2}>This Month</Text>
           </View>
           <View style={styles.revenueCard}>
             <Users size={24} color="#9B59B6" />
-            <Text style={styles.revenueAmount}>{totalCustomers}</Text>
-            <Text style={styles.revenueLabel}>Total Customers</Text>
+            <Text style={styles.revenueAmount} numberOfLines={1}>{totalCustomers}</Text>
+            <Text style={styles.revenueLabel} numberOfLines={2}>Total Customers</Text>
           </View>
         </View>
 
@@ -357,17 +357,19 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   revenueAmount: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: 'Inter-Bold',
     color: '#2C3E50',
     marginTop: 8,
+    textAlign: 'center',
   },
   revenueLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter-Regular',
     color: '#7F8C8D',
     textAlign: 'center',
     marginTop: 4,
+    lineHeight: 14,
   },
   quickActionsContainer: {
     paddingHorizontal: 20,

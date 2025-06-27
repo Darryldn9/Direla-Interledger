@@ -99,7 +99,10 @@ export default function PayScreen() {
       ]}
       onPress={() => setPaymentMethod(method)}
     >
-      <View style={styles.methodIcon}>
+      <View style={[
+        styles.methodIcon,
+        paymentMethod === method && styles.methodIconActive
+      ]}>
         {icon}
       </View>
       <View style={styles.methodInfo}>
@@ -109,7 +112,12 @@ export default function PayScreen() {
         ]}>
           {title}
         </Text>
-        <Text style={styles.methodDescription}>{description}</Text>
+        <Text style={[
+          styles.methodDescription,
+          paymentMethod === method && styles.methodDescriptionActive
+        ]}>
+          {description}
+        </Text>
       </View>
       {paymentMethod === method && (
         <View style={styles.activeIndicator} />
@@ -130,25 +138,25 @@ export default function PayScreen() {
         <View style={styles.methodsContainer}>
           <PaymentMethodButton
             method="qr"
-            icon={<QrCode size={24} color={paymentMethod === 'qr' ? '#FFFFFF' : '#0C7C59'} />}
+            icon={<QrCode size={24} color={paymentMethod === 'qr' ? '#2C3E50' : '#0C7C59'} />}
             title="QR Code"
             description="Scan to pay instantly"
           />
           <PaymentMethodButton
             method="whatsapp"
-            icon={<MessageCircle size={24} color={paymentMethod === 'whatsapp' ? '#FFFFFF' : '#25D366'} />}
+            icon={<MessageCircle size={24} color={paymentMethod === 'whatsapp' ? '#2C3E50' : '#25D366'} />}
             title="WhatsApp Pay"
             description="Send via WhatsApp message"
           />
           <PaymentMethodButton
             method="tap"
-            icon={<Nfc size={24} color={paymentMethod === 'tap' ? '#FFFFFF' : '#3498DB'} />}
+            icon={<Nfc size={24} color={paymentMethod === 'tap' ? '#2C3E50' : '#3498DB'} />}
             title="Tap to Pay"
             description="NFC contactless payment"
           />
           <PaymentMethodButton
             method="contacts"
-            icon={<Users size={24} color={paymentMethod === 'contacts' ? '#FFFFFF' : '#9B59B6'} />}
+            icon={<Users size={24} color={paymentMethod === 'contacts' ? '#2C3E50' : '#9B59B6'} />}
             title="Contacts"
             description="Send to phone number"
           />
@@ -330,6 +338,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: '#7F8C8D',
+  },
+  methodDescriptionActive: {
+    color: '#FFFFFF',
+    opacity: 0.9,
+  },
+  methodIconActive: {
+    backgroundColor: '#FFFFFF',
   },
   activeIndicator: {
     width: 8,
