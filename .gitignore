@@ -34,5 +34,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-#old project
-project/
+# old project
+"Old project/"
+Old\ project/

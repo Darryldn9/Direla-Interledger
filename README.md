@@ -1,183 +1,302 @@
-# Direla - South African Payment Solution
+# Dinela - QR Code Payment Solution with Open Payments
 
-A comprehensive mobile payment solution designed for South African communities, featuring wallet management, peer-to-peer lending, merchant tools, and multiple payment methods with offline support.
+A React Native/Expo mobile payment app featuring QR code generation and scanning with real Open Payments integration via Interledger Protocol. Perfect for merchants and customers to exchange payments seamlessly.
 
 ## 🌟 Features
 
-### 💰 Digital Wallet
-- **Balance Management**: View and manage your digital wallet balance
-- **Transaction History**: Track all payments, receipts, and transfers
-- **Reward Points**: Earn points through transactions and activities
-- **Offline Support**: Continue using core features even without internet connection
-- **Multi-language Support**: Local greetings and South African context
+### 💰 Digital Wallet Dashboard
+- **Balance Overview**: View digital wallet balance and transaction history
+- **Real-time Updates**: Live transaction tracking
+- **Payment History**: Comprehensive transaction logs
 
-### 🤝 Community Lending
-- **Borrow Money**: Apply for loans with community-based credit scoring
-- **Lend Money**: Earn interest by lending to community members
-- **Credit Score Tracking**: Build your creditworthiness through payment history
-- **Risk Assessment**: Transparent risk ratings for all lending opportunities
-- **Peer-to-Peer Network**: Direct lending between community members
+### 🏪 Merchant Tools
+- **QR Code Generation**: Create instant payment QR codes with real Open Payments IDs
+- **Business Analytics**: Revenue tracking and sales overview
+- **Payment Status**: Toggle payment acceptance on/off
+- **Transaction Management**: Monitor incoming payments
 
-### 🏪 Merchant Dashboard
-- **Business Analytics**: Track daily, weekly, and monthly revenue
-- **Payment Acceptance**: Toggle payment acceptance on/off
-- **QR Code Generation**: Create instant payment QR codes
-- **Transaction Management**: Monitor all customer transactions
-- **Offline Mode**: Accept payments even without internet connectivity
+### 📱 Customer Payment
+- **QR Code Scanning**: Scan merchant QR codes to pay instantly
+- **Payment Confirmation**: Secure authorization flow via browser
+- **Multiple Payment Methods**: QR, WhatsApp, NFC, and Contacts
+- **Nearby Merchants**: Discover local businesses
 
-### 💳 Multiple Payment Methods
-- **QR Code Payments**: Scan to pay instantly
-- **WhatsApp Pay**: Send payments via WhatsApp messages
-- **Tap to Pay**: NFC contactless payments
-- **Contact Payments**: Send money directly to phone numbers
-- **Nearby Merchants**: Discover and pay local businesses
-
-### 🌐 Interledger Integration
-- **Cross-Network Payments**: Connect to multiple payment networks
-- **Low Fees**: Guaranteed competitive transaction fees
-- **Optimal Routing**: Automatic best-path payment routing
-- **Network Resilience**: Fallback options for failed transactions
+### 🌐 Open Payments Integration
+- **Real Money Transfers**: Actual Interledger Protocol transactions
+- **Interactive Authorization**: Secure browser-based payment approval
+- **Cross-Network Support**: Connect to multiple payment providers
+- **Real Wallet Integration**: Uses live Open Payments test wallet
 
 ## 🛠️ Technology Stack
 
-- **Framework**: React Native with Expo
-- **Navigation**: Expo Router with file-based routing
+- **Frontend**: React Native with Expo
+- **Backend**: Node.js with Express
+- **Payment Protocol**: Open Payments SDK (@interledger/open-payments)
+- **QR Codes**: react-native-qrcode-svg + expo-camera
+- **Navigation**: Expo Router
 - **Language**: TypeScript
-- **UI Components**: Custom components with Lucide React Native icons
-- **State Management**: React Hooks
-- **Styling**: React Native StyleSheet
-- **Platform Support**: iOS, Android, and Web
 
-## 📱 Screenshots & App Structure
-
-The app consists of five main tabs:
-
-1. **Home/Wallet** (`index.tsx`) - Main dashboard with balance and transactions
-2. **Lending** (`lending.tsx`) - Borrowing and lending interface
-3. **Merchant** (`merchant.tsx`) - Business tools and analytics
-4. **Pay** (`pay.tsx`) - Payment methods and money transfer
-5. **Settings** (`settings.tsx`) - App configuration and preferences
-
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
-- npm or yarn
-- Expo CLI
-- iOS Simulator (for iOS development) or Android Studio (for Android development)
+- **Node.js** v16+ 
+- **npm** or **yarn**
+- **Expo CLI**: `npm install -g @expo/cli`
+- **Mobile Device** or iOS Simulator/Android Emulator
 
-### Installation
+### Step 1: Clone & Install
 
-1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd Direla
-```
-
-2. Install dependencies:
-```bash
+cd Dinela
 npm install
 ```
 
-3. Start the development server:
+### Step 2: Configure Network IP (IMPORTANT!)
+
+**⚠️ This is the most common setup issue!**
+
+The app currently uses hardcoded IP `192.168.10.56:3001`. You MUST update this to your machine's IP address.
+
+#### Option A: Automated Setup (Recommended)
+
 ```bash
-npm run dev
+# Run the setup helper script (macOS/Linux)
+./scripts/setup-network.sh
 ```
 
-4. Run on your preferred platform:
-   - **iOS**: Press `i` in the terminal or scan QR code with Expo Go app
-   - **Android**: Press `a` in the terminal or scan QR code with Expo Go app
-   - **Web**: Press `w` in the terminal
+This script will:
+- ✅ Auto-detect your IP address
+- ✅ Update all necessary files
+- ✅ Create backups
+- ✅ Verify the changes
 
-### Available Scripts
+**Note**: Windows users should use Option B (manual setup)
 
-- `npm run dev` - Start the development server with Expo
-- `npm run build:web` - Build the app for web deployment
-- `npm run lint` - Run ESLint for code quality checks
+#### Option B: Manual Setup
 
-## 🎯 Target Audience
+1. **Find your IP address:**
+   ```bash
+   # macOS/Linux
+   ifconfig | grep "inet " | grep -v 127.0.0.1
+   
+   # Windows
+   ipconfig | findstr "IPv4"
+   ```
 
-This app is specifically designed for:
+2. **Update frontend API calls** (replace `192.168.10.56` with YOUR IP):
+   ```bash
+   # Search and replace in all files
+   grep -r "192.168.10.56" app/ components/
+   ```
+   
+   Update these files:
+   - `app/(tabs)/pay.tsx` (multiple fetch calls)
+   - `components/QRCodeGenerator.tsx` (1 fetch call)
 
-- **South African Communities**: Local language support and cultural context
-- **Spaza Shop Owners**: Small business payment solutions
-- **Community Members**: Peer-to-peer financial services
-- **Unbanked/Underbanked**: Alternative financial services
-- **Mobile-First Users**: Optimized for smartphone usage
+3. **Alternative: Use localhost** (if testing on same machine):
+   - Replace `http://192.168.10.56:3001` with `http://localhost:3001`
+   - This only works for web version, not mobile device
+
+### Step 3: Start Backend Server
+
+```bash
+cd backend
+npm install
+npm start
+```
+
+You should see:
+```
+✅ Dinela Backend ready:
+   Wallet: https://ilp.interledger-test.dev/daddyd
+   Key ID: 2498c668-28a2-44e4-8d89-4cd29e886901
+   Port: 3001
+🚀 Dinela Backend running on:
+   Local: http://localhost:3001
+   Network: http://YOUR_IP:3001
+```
+
+### Step 4: Start Frontend
+
+```bash
+# In the main directory (not backend/)
+npx expo start --clear
+```
+
+### Step 5: Test the App
+
+1. **Open the app** on your device/simulator
+2. **Generate QR Code**: Go to Merchant tab → "Generate QR"
+3. **Scan QR Code**: Go to Pay tab → "QR Code" → Scan the generated code
+4. **Authorize Payment**: Browser will open for authorization
+5. **Complete Payment**: Return to app to see success message
+
+## 📱 App Structure
+
+```
+Dinela/
+├── app/
+│   ├── (tabs)/
+│   │   ├── index.tsx      # Wallet Dashboard
+│   │   ├── pay.tsx        # Payment Methods & QR Scanner
+│   │   ├── merchant.tsx   # QR Generation & Business Tools
+│   │   ├── lending.tsx    # Lending Features
+│   │   └── settings.tsx   # App Settings
+│   └── _layout.tsx        # Root Layout
+├── backend/
+│   ├── server.js          # Express API with Open Payments
+│   └── package.json       # Backend dependencies
+├── components/
+│   ├── QRCodeGenerator.tsx  # QR code creation
+│   └── QRCodeScanner.tsx    # QR code scanning
+└── config/
+    └── api.config.js      # API configuration
+```
 
 ## 🔧 Configuration
 
-### Environment Setup
+### Open Payments Credentials
 
-The app uses Expo configuration in `app.json`. Key settings include:
+The app uses **real Open Payments test credentials**:
 
-- **App Name**: Currently set to "bolt-expo-nativewind" (can be updated)
-- **Slug**: bolt-expo-nativewind
-- **Platform Support**: iOS, Android, Web
-- **New Architecture**: Enabled for better performance
+- **Wallet**: `https://ilp.interledger-test.dev/daddyd`
+- **Key ID**: `2498c668-28a2-44e4-8d89-4cd29e886901`
+- **Environment**: Interledger testnet
 
-### Customization
+These are already configured in `backend/server.js`. For production, you'd replace with your own wallet credentials.
 
-To customize the app for your specific use case:
+### Network Configuration
 
-1. Update `app.json` with your app name and branding
-2. Modify currency symbols and language in component files
-3. Adjust color schemes in StyleSheet definitions
-4. Configure payment provider integrations
-5. Set up your Interledger network connections
+**For Mobile Device Testing:**
+1. Ensure your computer and phone are on the same WiFi network
+2. Update IP addresses as described in Step 2 above
+3. Your phone can then connect to your computer's backend
 
-## 🔒 Security Features
+**For Web Testing:**
+- Use `http://localhost:3001` in the frontend code
+- Only works when testing in browser
 
-- **Offline Transaction Storage**: Secure local transaction queuing
-- **Payment Verification**: Multiple confirmation steps for transactions
-- **Community Trust Scoring**: Reputation-based lending decisions
-- **Secure Payment Routing**: Interledger protocol security standards
+## 🐛 Troubleshooting
 
-## 🌍 Localization
+### Common Issues
 
-The app includes South African-specific features:
+**1. "Network request failed" when scanning QR**
+- ✅ **Solution**: Update IP addresses in frontend code
+- ✅ **Check**: Backend is running on correct port (3001)
+- ✅ **Verify**: Phone and computer on same WiFi
 
-- Zulu greeting: "Sawubona" 
-- South African Rand (ZAR) currency
-- Local business scenarios (spaza shops, taxi services)
-- Community-focused financial services
+**2. "Route merchant.tsx missing required default export"**
+- ✅ **Solution**: Run `npx expo start --clear` to clear Metro cache
+- ✅ **Check**: No import errors in merchant.tsx
 
-## 📈 Future Enhancements
+**3. QR Scanner fires multiple times**
+- ✅ **Fixed**: Latest code includes debouncing protection
+- ✅ **Update**: Pull latest changes if still occurring
 
-- Integration with South African banks
-- Government ID verification
-- Expanded offline capabilities
-- Additional local payment methods
-- Enhanced merchant analytics
-- Group saving schemes (stokvels)
+**4. Camera permission denied**
+- ✅ **iOS**: Allow camera access in Settings → Expo Go
+- ✅ **Android**: Grant camera permission when prompted
+
+**5. Backend won't start**
+- ✅ **Check**: Node.js v16+ installed
+- ✅ **Install**: Run `npm install` in backend directory
+- ✅ **Port**: Ensure port 3001 is available
+
+### Testing Checklist
+
+Before reporting issues, verify:
+
+- [ ] Backend server is running (`npm start` in backend/)
+- [ ] Frontend IP addresses match your machine's IP
+- [ ] Both devices on same WiFi network
+- [ ] Camera permissions granted
+- [ ] Port 3001 is not blocked by firewall
+
+## 🔒 Security & Payments
+
+### Real Money Warning
+
+⚠️ **This app processes REAL payments** on Interledger testnet. While amounts are small, the transactions are actual value transfers.
+
+### Open Payments Flow
+
+1. **QR Generation**: Creates real incoming payment request
+2. **QR Scanning**: Parses payment details from QR code
+3. **Quote Creation**: Gets real exchange rates and fees
+4. **Authorization**: Browser-based interactive consent
+5. **Payment Execution**: Actual money transfer via Interledger
+
+### Test Safely
+
+- Use small amounts (under $1 USD equivalent)
+- Test on Interledger testnet only
+- Don't use production credentials
+
+## 🚀 Deployment
+
+### For Production
+
+1. **Get Production Credentials**:
+   - Register for Open Payments provider
+   - Generate production wallet and keys
+   - Update `backend/server.js` credentials
+
+2. **Security Hardening**:
+   - Use environment variables for secrets
+   - Enable HTTPS/TLS
+   - Add rate limiting
+   - Implement proper error handling
+
+3. **Mobile App Build**:
+   ```bash
+   npx expo build:ios
+   npx expo build:android
+   ```
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open Pull Request
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 📞 Support
-
-For support and questions:
-- Create an issue in this repository
-- Contact the development team
-- Check the Expo documentation for framework-related questions
+MIT License - see LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
-- Expo team for the excellent React Native framework
-- Lucide for beautiful open-source icons
-- South African fintech community for inspiration and feedback
-- Interledger Foundation for payment protocol standards
+- **Interledger Foundation** for Open Payments protocol
+- **Expo** for React Native framework
+- **Lucide** for beautiful icons
+- **Test wallet providers** for development credentials
 
 ---
 
-**Note**: This app is designed for demonstration purposes. For production use, ensure proper security audits, regulatory compliance, and integration with licensed financial service providers. 
+**⚡ Quick Debug Commands:**
+
+```bash
+# Auto-configure network (macOS/Linux)
+./scripts/setup-network.sh
+
+# Check your IP
+ifconfig | grep inet
+
+# Restart backend
+cd backend && npm start
+
+# Clear Metro cache
+npx expo start --clear
+
+# Check backend health
+curl http://YOUR_IP:3001/health
+```
+
+**Need Help?** Create an issue with:
+- Your operating system
+- Error messages (full text)
+- Steps you tried
+- Network configuration details 
