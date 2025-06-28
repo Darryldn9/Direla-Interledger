@@ -78,7 +78,7 @@ export default function PayScreen() {
           console.log('🔄 Creating contact payment...');
           
           // Step 1: Create incoming payment on backend (same as QR generation)
-          const response = await fetch('http://196.47.237.170:3001/api/qr/generate', {
+          const response = await fetch('http://192.168.10.95:3001/api/qr/generate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -258,14 +258,14 @@ export default function PayScreen() {
 
     try {
       // Check if user has completed authorization by trying to complete the payment
-      const response = await fetch('http://196.47.237.170:3001/api/payment/complete', {
+      const response = await fetch('http://192.168.10.95:3001/api/payment/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           continueToken,
           continueUri,
           quoteId,
-          description: `Dinela payment of ${paymentData.currency} ${paymentData.amount}`
+          description: `Direla payment of ${paymentData.currency} ${paymentData.amount}`
         })
       });
 
@@ -319,7 +319,7 @@ export default function PayScreen() {
       console.log('🔄 Starting Open Payments flow...');
       
       // Step 1: Create quote
-      const quoteResponse = await fetch('http://196.47.237.170:3001/api/payment/quote', {
+      const quoteResponse = await fetch('http://192.168.10.95:3001/api/payment/quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -340,37 +340,17 @@ export default function PayScreen() {
   
       // Step 2: Show confirmation with contact-specific message
       const walletName = (paymentData.walletAddress || paymentData.paymentId)?.split('/').pop() || 'Unknown';
-
-      // Parse quote amounts correctly
-const receiveAmount = quoteResult.quote.receiveAmount.value / Math.pow(10, quoteResult.quote.receiveAmount.assetScale);
-const sendAmount = quoteResult.quote.sendAmount.value / Math.pow(10, quoteResult.quote.sendAmount.assetScale);
-
-// Get currencies from quote (not from paymentData)
-const receiveCurrency = quoteResult.quote.receiveAmount.assetCode;
-const sendCurrency = quoteResult.quote.sendAmount.assetCode;
-
-// Different confirmation messages based on payment method and currency
-let confirmationMessage;
-
-if (paymentData.paymentMethod === 'contact') {
-  if (receiveCurrency === sendCurrency) {
-    // Same currency - show fee
-    const feeAmount = sendAmount - receiveAmount;
-    confirmationMessage = `👥 Send to Contact: ${paymentData.contactName}\n📞 Phone: ${paymentData.recipient}\n💰 Amount: ${receiveCurrency} ${receiveAmount.toFixed(2)}\n💸 Fee: ${sendCurrency} ${feeAmount.toFixed(2)}\n💳 You pay: ${sendCurrency} ${sendAmount.toFixed(2)}\n🏦 To: ${walletName}\n\n📞 Contact payment via Open Payments`;
-  } else {
-    // Cross-currency - show conversion
-    confirmationMessage = `👥 Send to Contact: ${paymentData.contactName}\n📞 Phone: ${paymentData.recipient}\n💰 They receive: ${receiveCurrency} ${receiveAmount.toFixed(2)}\n💳 You pay: ${sendCurrency} ${sendAmount.toFixed(2)}\n🔄 Currency conversion\n🏦 To: ${walletName}\n\n📞 Contact payment via Open Payments`;
-  }
-} else {
-  if (receiveCurrency === sendCurrency) {
-    // Same currency - show fee
-    const feeAmount = sendAmount - receiveAmount;
-    confirmationMessage = `💰 Amount: ${receiveCurrency} ${receiveAmount.toFixed(2)}\n💸 Fee: ${sendCurrency} ${feeAmount.toFixed(2)}\n💳 You pay: ${sendCurrency} ${sendAmount.toFixed(2)}\n🏦 To: ${walletName}\n\n✅ Quote ID: ${quoteResult.quote.id}\n🔗 Payment ID: ${paymentData.paymentId || 'Direct wallet'}`;
-  } else {
-    // Cross-currency - show conversion
-    confirmationMessage = `💰 They receive: ${receiveCurrency} ${receiveAmount.toFixed(2)}\n💳 You pay: ${sendCurrency} ${sendAmount.toFixed(2)}\n🔄 Currency conversion\n🏦 To: ${walletName}\n\n✅ Quote ID: ${quoteResult.quote.id}\n🔗 Payment ID: ${paymentData.paymentId || 'Direct wallet'}`;
-  }
-}
+  
+      // Calculate proper fee and total
+      const sendAmount = quoteResult.quote.sendAmount.value / Math.pow(10, quoteResult.quote.sendAmount.assetScale);
+      const receiveAmount = paymentData.amount;
+      const feeAmount = sendAmount - receiveAmount;
+  
+      // Different confirmation messages based on payment method
+      const confirmationMessage = paymentData.paymentMethod === 'contact' 
+        ? `👥 Send to Contact: ${paymentData.contactName}\n📞 Phone: ${paymentData.recipient}\n💰 Amount: ${paymentData.currency} ${receiveAmount}\n💸 Fee: ${paymentData.currency} ${feeAmount.toFixed(2)}\n💳 You pay: ${paymentData.currency} ${sendAmount.toFixed(2)}\n🏦 To: ${walletName}\n\n📞 Contact payment via Open Payments`
+        : `💰 Amount: ${paymentData.currency} ${receiveAmount}\n💸 Fee: ${paymentData.currency} ${feeAmount.toFixed(2)}\n💳 You pay: ${paymentData.currency} ${sendAmount.toFixed(2)}\n🏦 To: ${walletName}\n\n✅ Quote ID: ${quoteResult.quote.id}\n🔗 Payment ID: ${paymentData.paymentId || 'Direct wallet'}`;
+  
       Alert.alert(
         paymentData.paymentMethod === 'contact' ? 'Confirm Contact Payment' : 'Confirm Payment',
         confirmationMessage,
@@ -387,7 +367,7 @@ if (paymentData.paymentMethod === 'contact') {
                 console.log('🔄 Processing payment...');
                 
                 // Step 3: Send payment
-                const paymentResponse = await fetch('http://196.47.237.170:3001/api/payment/send', {
+                const paymentResponse = await fetch('http://192.168.10.95:3001/api/payment/send', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({

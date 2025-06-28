@@ -5,7 +5,7 @@ import Constants from 'expo-constants';
 function getApiBaseUrl() {
   if (__DEV__) {
     // Force use the network IP for mobile device connectivity
-    return 'http://192.168.10.56:3001';
+    return 'http://196.47.226.189:3001'; 
   }
   
   // In production, use your deployed backend URL
@@ -22,15 +22,11 @@ export const API_CONFIG = {
       incoming: '/api/payment/incoming',
       quote: '/api/payment/quote',
       send: '/api/payment/send',
+      complete: '/api/payment/complete',  // ← Add this missing endpoint
       qr: '/api/qr/generate'
     }
-  },
-  
-  // Open Payments configuration
-  OPEN_PAYMENTS: {
-    walletAddressUrl: 'https://ilp.interledger-test.dev/daddyd',
-    keyId: '2498c668-28a2-44e4-8d89-4cd29e886901'
   }
+
 };
 
-export default API_CONFIG; 
+export default API_CONFIG;

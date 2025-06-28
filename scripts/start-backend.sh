@@ -1,11 +1,11 @@
 #!/bin/bash
 
-echo "🚀 Starting Dinela Backend Server..."
+echo "🚀 Starting Direla Backend Server..."
 
 # Check if we're in the right directory
 if [ ! -f "private.key" ]; then
     echo "❌ Error: private.key not found in current directory"
-    echo "Please run this script from the Dinela root directory"
+    echo "Please run this script from the Direla root directory"
     exit 1
 fi
 

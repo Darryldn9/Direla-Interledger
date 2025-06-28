@@ -2,7 +2,7 @@
 
 ## 🎉 Successfully Implemented
 
-I have successfully implemented **QR code payments** and **Open Payments integration** into your Dinela project! Here's what's now working:
+I have successfully implemented **QR code payments** and **Open Payments integration** into your Direla project! Here's what's now working:
 
 ### 🔥 Key Features Added
 
@@ -82,7 +82,7 @@ npm run dev      # Terminal 2: Mobile app
 **Backend Health Check:**
 ```bash
 curl http://localhost:3001/health
-# ✅ Returns: {"status":"healthy","service":"Dinela Backend"...}
+# ✅ Returns: {"status":"healthy","service":"Direla Backend"...}
 ```
 
 **QR Generation Test:**
@@ -140,6 +140,6 @@ The implementation is **complete and ready to use**! You can now:
 
 ## 🎉 Success!
 
-Your Dinela app now has **real QR payments with Open Payments integration**! 
+Your Direla app now has **real QR payments with Open Payments integration**! 
 
 Merchants can generate QR codes, customers can scan to pay, and payments are processed via the global Interledger network. The system is ready for South African markets with ZAR support and worldwide payment capabilities. 🇿🇦💰✨ 
