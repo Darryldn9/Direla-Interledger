@@ -305,6 +305,18 @@ export default function PayScreen() {
                     fee: quoteResult.quote.sendAmount.value,
                     status: paymentResult.outgoingPayment.state
                   });
+                  const res = await fetch('https://direlahackathon.xyz/payment-complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      success: true,
+                        amount: paymentData.amount,
+                        currency: paymentData.currency,
+                        method: 'OPEN_PAYMENTS',
+                      })
+                    });
+          
+                  await res.json();
                   setShowQRScanner(false);
                   setIsProcessing(false);
                 } else if (paymentResult.requiresAuth) {
