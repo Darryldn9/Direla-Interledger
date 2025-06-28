@@ -15,7 +15,7 @@ import { CheckCircle, Share2, Copy } from 'lucide-react-native';
 // Removed problematic import - using hardcoded URL
 
 interface WhatsAppLinkGeneratorProps {
-  onLinkGenerated?: (link: any) => void;
+  onLinkGenerated?: (link: any, phoneNumber: string) => void;
 }
 
 export default function WhatsAppLinkGenerator({ onLinkGenerated }: WhatsAppLinkGeneratorProps) {
@@ -25,7 +25,7 @@ export default function WhatsAppLinkGenerator({ onLinkGenerated }: WhatsAppLinkG
   const [paymentInfo, setPaymentInfo] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
-
+  const [phoneNumber, setPhoneNumber] = useState('');
   const generateLink = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       Alert.alert('Error', 'Please enter a valid amount');
@@ -65,7 +65,7 @@ export default function WhatsAppLinkGenerator({ onLinkGenerated }: WhatsAppLinkG
       setGenerated(true);
       
       if (onLinkGenerated) {
-        onLinkGenerated(result);
+        onLinkGenerated(result, phoneNumber);
       }
 
       Alert.alert(
@@ -135,6 +135,21 @@ export default function WhatsAppLinkGenerator({ onLinkGenerated }: WhatsAppLinkG
             onChangeText={setAmount}
             placeholder="0.00"
             keyboardType="numeric"
+            placeholderTextColor="#BDC3C7"
+          />
+        </View>
+      </View>
+
+      <View style={styles.amountContainer}>
+        <Text style={styles.amountLabel}>WhatsApp Number</Text>
+        <View style={styles.amountInputContainer}>
+          <Text style={styles.currencySymbol}>+27</Text>
+          <TextInput
+            style={styles.amountInput}
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            placeholder="712345678"
+            keyboardType="phone-pad"
             placeholderTextColor="#BDC3C7"
           />
         </View>
@@ -344,5 +359,14 @@ const styles = StyleSheet.create({
     color: '#2980B9',
     lineHeight: 20,
     textAlign: 'center',
+  },
+  amountContainer: {
+    marginBottom: 20,
+  },
+  amountLabel: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#2C3E50',
+    marginBottom: 8,
   },
 }); 

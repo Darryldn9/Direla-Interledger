@@ -284,11 +284,11 @@ export default function PayScreen() {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({
-           walletAddress: paymentData.walletAddress || paymentData.paymentId?.split('/incoming-payments')[0],
-           amount: paymentData.amount,
-           assetCode: paymentData.currency,
+           walletAddress: paymentData?.walletAddress || paymentData?.paymentId?.split('/incoming-payments')[0],
+           amount: paymentData?.amount,
+           assetCode: paymentData?.currency,
            assetScale: 2,
-           incomingPaymentId: paymentData.paymentId // Use existing incoming payment if available
+           incomingPaymentId: paymentData?.paymentId // Use existing incoming payment if available
          })
        });
 
@@ -300,10 +300,10 @@ export default function PayScreen() {
       console.log('✅ Quote created:', quoteResult);
 
              // Step 2: Show confirmation with real quote details
-       const walletName = (paymentData.walletAddress || paymentData.paymentId)?.split('/').pop() || 'Unknown';
+       const walletName = (paymentData?.walletAddress || paymentData?.paymentId)?.split('/').pop() || 'Unknown';
        Alert.alert(
          'Confirm Payment',
-         `💰 Amount: ${paymentData.currency} ${paymentData.amount}\n💸 Fee: ${quoteResult.quote.sendAmount.value / Math.pow(10, quoteResult.quote.sendAmount.assetScale)} ${quoteResult.quote.sendAmount.assetCode}\n🏦 To: ${walletName}\n\n✅ Quote ID: ${quoteResult.quote.id}\n🔗 Payment ID: ${paymentData.paymentId || 'Direct wallet'}`,
+         `💰 Amount: ${paymentData?.currency} ${paymentData?.amount}\n💸 Fee: ${quoteResult.quote.sendAmount.value / Math.pow(10, quoteResult.quote.sendAmount.assetScale)} ${quoteResult.quote.sendAmount.assetCode}\n🏦 To: ${walletName}\n\n✅ Quote ID: ${quoteResult.quote.id}\n🔗 Payment ID: ${paymentData?.paymentId || 'Direct wallet'}`,
                     [
              { text: 'Cancel', onPress: () => {
                scanningRef.current = false;
@@ -322,8 +322,8 @@ export default function PayScreen() {
                    headers: { 'Content-Type': 'application/json' },
                    body: JSON.stringify({
                      quoteId: quoteResult.quote.id,
-                     walletAddress: paymentData.walletAddress || paymentData.paymentId?.split('/incoming-payments')[0],
-                     incomingPaymentId: paymentData.paymentId
+                     walletAddress: paymentData?.walletAddress || paymentData?.paymentId?.split('/incoming-payments')[0],
+                     incomingPaymentId: paymentData?.paymentId
                    })
                  });
 
@@ -333,8 +333,8 @@ export default function PayScreen() {
                 if (paymentResult.success) {
                   handleQRPaymentComplete({
                     success: true,
-                    amount: paymentData.amount,
-                    currency: paymentData.currency,
+                    amount: paymentData?.amount,
+                    currency: paymentData?.currency,
                     transactionId: paymentResult.outgoingPayment.id,
                     method: 'OPEN_PAYMENTS',
                     quoteId: quoteResult.quote.id,
@@ -347,7 +347,7 @@ export default function PayScreen() {
                   // Payment requires user authorization
                   Alert.alert(
                     'Payment Authorization Required 🔐',
-                    `To complete this payment, you need to authorize it in your browser.\n\n💰 Amount: ${paymentData.currency} ${paymentData.amount}\n\nThis is a security feature of Open Payments.`,
+                    `To complete this payment, you need to authorize it in your browser.\n\n💰 Amount: ${paymentData?.currency} ${paymentData?.amount}\n\nThis is a security feature of Open Payments.`,
                     [
                       {
                         text: 'Cancel',
@@ -457,19 +457,29 @@ export default function PayScreen() {
     }
   };
 
-  const handleWhatsAppLinkGenerated = async (data: any) => {
-    console.log('Link generated:', typeof data);
+  const handleWhatsAppLinkGenerated = async (data: any, phoneNumber: string) => {
+    console.log('Link generated:', data);
     
     const response = await fetch('https://direlahackathon.xyz/incoming-payment-link', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify({
+        ...data,
+        phoneNumber: `+27${phoneNumber}`
+      })
     });
 
-    const { ok, payment } = await response.json();
+    const { ok } = await response.json();
+
+    const scannedData = JSON.parse(data);
   
     if(ok) {
-      processOpenPayment(payment);
+      processOpenPayment({
+        paymentId: scannedData.paymentId,
+        amount: scannedData.amount,
+        currency: scannedData.currency,
+        walletAddress: scannedData.walletAddress,
+      });
     }
   };
 

@@ -21,8 +21,8 @@ export default function WhatsAppPaymentInitiator({ onSendWhatsAppPayment }: { on
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Send Payment OTP Via WhatsApp</Text>
-      <Text style={styles.subtitle}>Send a payment OTP to a customer via WhatsApp</Text>
+      <Text style={styles.title}>Send Payment Request Via WhatsApp</Text>
+      <Text style={styles.subtitle}>Send a payment request to a customer via WhatsApp</Text>
 
       {/* Amount Input */}
       <View style={styles.inputContainer}>
@@ -78,7 +78,7 @@ export default function WhatsAppPaymentInitiator({ onSendWhatsAppPayment }: { on
         {loading ? (
           <ActivityIndicator color="#FFFFFF" size="small" />
         ) : (
-          <Text style={styles.generateButtonText}>Send Payment OTP</Text>
+          <Text style={styles.generateButtonText}>Send Payment Request</Text>
         )}
       </TouchableOpacity>
 
@@ -90,13 +90,6 @@ export default function WhatsAppPaymentInitiator({ onSendWhatsAppPayment }: { on
         </Text>
       </View>
 
-      {/* Info */}
-      <View style={styles.infoContainer}>
-        <Text style={styles.infoText}>
-          💡 This will create a secure payment request using Open Payments protocol. 
-          Customers can scan and pay from anywhere in the world.
-        </Text>
-      </View>
     </View>
   );
 }

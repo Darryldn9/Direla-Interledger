@@ -263,7 +263,7 @@ app.post('/api/qr/generate', async (req, res) => {
     console.log('📱 Generating QR code for payment:', { amount, currency });
 
     // Create incoming payment first
-    const paymentResponse = await fetch(`http://localhost:${PORT}/api/payment/incoming`, {
+    const paymentResponse = await fetch(`http://196.47.226.189:${PORT}/api/payment/incoming`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount, currency, description })

@@ -149,7 +149,7 @@ export default function MerchantScreen() {
           <TouchableOpacity onPress={() => setShowWhatsAppInitiator(false)}>
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Send Payment OTP</Text>
+          <Text style={styles.headerTitle}>Send Payment Request</Text>
           <View style={{ width: 50 }} />
         </View>
         <WhatsAppPaymentInitiator onSendWhatsAppPayment={handleWhatsAppSend} />
