@@ -49,7 +49,7 @@ let unauthenticatedClient;
 // Initialize Open Payments clients
 async function initialize() {
   try {
-    console.log('🔧 Initializing Open Payments Backend for Dinela...');
+    console.log('🔧 Initializing Open Payments Backend for Direla...');
     
     // Check if private key file exists
     if (!fs.existsSync(CONFIG.privateKeyPath)) {
@@ -75,7 +75,7 @@ async function initialize() {
     });
     console.log('✅ Authenticated client created');
     
-    console.log(`✅ Dinela Backend ready:
+    console.log(`✅ Direla Backend ready:
    Customer Wallet (sends): ${CONFIG.walletAddressUrl}
    Merchant Wallet (receives): ${CONFIG.merchantWalletUrl}
    Key ID: ${CONFIG.keyId}
@@ -114,7 +114,7 @@ function getLocalIPAddress() {
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
-    service: 'Dinela Backend',
+    service: 'Direla Backend',
     customerWallet: CONFIG.walletAddressUrl,
     merchantWallet: CONFIG.merchantWalletUrl,
     keyId: CONFIG.keyId,
@@ -188,7 +188,7 @@ app.get('/api/wallet/:address', async (req, res) => {
 // Create incoming payment (for QR code generation)
 app.post('/api/payment/incoming', async (req, res) => {
   try {
-    const { amount, currency = 'USD', description = 'Dinela Payment' } = req.body;
+    const { amount, currency = 'USD', description = 'Direla Payment' } = req.body;
     
     console.log('💰 Creating incoming payment request for MERCHANT wallet:', { amount, currency, description });
 
@@ -227,7 +227,7 @@ app.post('/api/payment/incoming', async (req, res) => {
         },
         metadata: {
           description: description,
-          source: 'Dinela App'
+          source: 'Direla App'
         }
       }
     );
@@ -258,7 +258,7 @@ app.post('/api/payment/incoming', async (req, res) => {
 // Generate QR code data for payment
 app.post('/api/qr/generate', async (req, res) => {
   try {
-    const { amount, currency = 'USD', description = 'Dinela Payment' } = req.body;
+    const { amount, currency = 'USD', description = 'Direla Payment' } = req.body;
     
     console.log('📱 Generating QR code for payment:', { amount, currency });
 
@@ -291,7 +291,7 @@ app.post('/api/qr/generate', async (req, res) => {
       qrData: JSON.stringify(qrData),
       payment: paymentData.payment,
       displayInfo: {
-        merchantName: 'Dinela Merchant',
+        merchantName: 'Direla Merchant',
         amount: `${currency} ${amount}`,
         description: description
       }
@@ -359,7 +359,7 @@ app.post('/api/payment/quote', async (req, res) => {
             assetScale: recipientWalletAddress.assetScale
           },
           metadata: {
-            source: 'Dinela App',
+            source: 'Direla App',
             description: `Payment of ${assetCode} ${amount}`
           }
         }
@@ -498,7 +498,7 @@ app.post('/api/payment/send', async (req, res) => {
           }
         },
         client: {
-          name: 'Dinela Mobile App',
+          name: 'Direla Mobile App',
           uri: CONFIG.walletAddressUrl
         }
       }
@@ -529,8 +529,8 @@ app.post('/api/payment/send', async (req, res) => {
       walletAddress: walletAddress.id,
       quoteId: quoteId,
       metadata: {
-        description: 'Dinela QR Payment',
-        source: 'Dinela App'
+        description: 'Direla QR Payment',
+        source: 'Direla App'
       }
     };
 
@@ -581,7 +581,7 @@ app.post('/api/payment/send', async (req, res) => {
 // Complete the payment after user authorization
 app.post('/api/payment/complete', async (req, res) => {
   try {
-    const { continueToken, continueUri, quoteId, description = 'Dinela QR Payment' } = req.body;
+    const { continueToken, continueUri, quoteId, description = 'Direla QR Payment' } = req.body;
 
     if (!continueToken || !continueUri || !quoteId) {
       return res.status(400).json({
@@ -745,7 +745,7 @@ async function startServer() {
     await initialize();
     app.listen(PORT, () => {
       const localIP = getLocalIPAddress();
-      console.log(`🚀 Dinela Backend running on:`);
+      console.log(`🚀 Direla Backend running on:`);
       console.log(`   Local: http://localhost:${PORT}`);
       console.log(`   Network: http://${localIP}:${PORT}`);
       console.log(`   Health: http://localhost:${PORT}/health`);

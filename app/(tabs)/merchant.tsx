@@ -22,6 +22,7 @@ import {
   Settings 
 } from 'lucide-react-native';
 import QRCodeGenerator from '../../components/QRCodeGenerator';
+import WhatsAppPaymentInitiator from '@/components/WhatsAppPaymentInitiator';
 
 interface SalesData {
   period: string;
@@ -100,6 +101,10 @@ export default function MerchantScreen() {
     setShowQRGenerator(true);
   };
 
+  const initiateWhatsAppPayment = () => {
+    setShowWhatsAppInitiator(true);
+  };
+
   const handleQRGenerated = (qrData: any) => {
     console.log('QR Code generated:', qrData);
   };
@@ -110,6 +115,47 @@ export default function MerchantScreen() {
       'Sales report has been prepared and will be available in your downloads folder.',
     );
   };
+
+  const merchantNumber = '+27712345678';
+  const handleWhatsAppSend = async (amount: string, description: string, whatsappNumber: string) => {
+    const confirmationOtp = Math.floor(100000 + Math.random() * 900000);
+
+    Alert.alert(
+      'OTP',
+      `Dear customer, please confirm payment by entering the OTP: ${confirmationOtp}`,
+    );
+
+    const res = await fetch('https://direlahackathon.xyz/incoming-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        paymentTo: merchantNumber,
+        amount: `R${amount}`,
+        description: description,
+        paymentFrom: `+27${whatsappNumber}`,
+        confirmationOtp: confirmationOtp,
+      })
+    });
+
+    await res.json();
+  }
+
+  const [showWhatsAppInitiator, setShowWhatsAppInitiator] = useState(false);
+
+  if (showWhatsAppInitiator) {
+    return (
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: 70 }]}>
+          <TouchableOpacity onPress={() => setShowWhatsAppInitiator(false)}>
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Send Payment OTP</Text>
+          <View style={{ width: 50 }} />
+        </View>
+        <WhatsAppPaymentInitiator onSendWhatsAppPayment={handleWhatsAppSend} />
+      </View>
+    );
+  }
 
   if (showQRGenerator) {
     return (
@@ -188,9 +234,9 @@ export default function MerchantScreen() {
               <QrCode size={24} color="#0C7C59" />
               <Text style={styles.actionText}>Generate QR</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity style={styles.actionButton} onPress={initiateWhatsAppPayment}>
               <ShoppingCart size={24} color="#3498DB" />
-              <Text style={styles.actionText}>New Sale</Text>
+              <Text style={styles.actionText}>WhatsApp</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton}>
               <Calculator size={24} color="#F1C40F" />

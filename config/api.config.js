@@ -5,7 +5,7 @@ import Constants from 'expo-constants';
 function getApiBaseUrl() {
   if (__DEV__) {
     // Force use the network IP for mobile device connectivity
-    return 'http://192.168.10.95:3001'; 
+    return 'http://196.47.226.189:3001'; 
   }
   
   // In production, use your deployed backend URL

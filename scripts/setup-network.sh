@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Dinela Network Setup Helper
+# Direla Network Setup Helper
 # This script helps configure your network IP addresses
 
-echo "🔧 Dinela Network Configuration Helper"
+echo "🔧 Direla Network Configuration Helper"
 echo "======================================"
 
 # Get the current IP address
@@ -25,13 +25,13 @@ QR_FILE="components/QRCodeGenerator.tsx"
 
 if [[ ! -f "$PAY_FILE" ]]; then
     echo "❌ File not found: $PAY_FILE"
-    echo "Make sure you're running this from the Dinela project root."
+    echo "Make sure you're running this from the Direla project root."
     exit 1
 fi
 
 if [[ ! -f "$QR_FILE" ]]; then
     echo "❌ File not found: $QR_FILE"
-    echo "Make sure you're running this from the Dinela project root."
+    echo "Make sure you're running this from the Direla project root."
     exit 1
 fi
 

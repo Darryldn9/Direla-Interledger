@@ -1,7 +1,7 @@
 {
-  "name": "dinela-backend",
+  "name": "Direla-backend",
   "version": "1.0.0",
-  "description": "Dinela Backend API with Open Payments integration",
+  "description": "Direla Backend API with Open Payments integration",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

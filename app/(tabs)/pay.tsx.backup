@@ -190,7 +190,7 @@ export default function PayScreen() {
           continueToken,
           continueUri,
           quoteId,
-          description: `Dinela payment of ${paymentData.currency} ${paymentData.amount}`
+          description: `Direla payment of ${paymentData.currency} ${paymentData.amount}`
         })
       });
 

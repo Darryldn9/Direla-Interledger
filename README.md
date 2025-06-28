@@ -50,7 +50,7 @@ A React Native/Expo mobile payment app featuring QR code generation and scanning
 
 ```bash
 git clone <repository-url>
-cd Dinela
+cd Direla
 npm install
 ```
 
@@ -110,11 +110,11 @@ npm start
 
 You should see:
 ```
-✅ Dinela Backend ready:
+✅ Direla Backend ready:
    Wallet: https://ilp.interledger-test.dev/daddyd
    Key ID: 2498c668-28a2-44e4-8d89-4cd29e886901
    Port: 3001
-🚀 Dinela Backend running on:
+🚀 Direla Backend running on:
    Local: http://localhost:3001
    Network: http://YOUR_IP:3001
 ```
@@ -137,7 +137,7 @@ npx expo start --clear
 ## 📱 App Structure
 
 ```
-Dinela/
+Direla/
 ├── app/
 │   ├── (tabs)/
 │   │   ├── index.tsx      # Wallet Dashboard

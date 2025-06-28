@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,8 @@ import {
   MapPin,
 } from 'lucide-react-native';
 import { CameraView, Camera } from 'expo-camera';
+
+import WhatsAppLinkGenerator from '@/components/WhatsAppLinkGenerator';
 
 interface QuickContact {
   id: string;
@@ -47,6 +49,7 @@ export default function PayScreen() {
   const [scanned, setScanned] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const scanningRef = useRef(false); // Synchronous flag to prevent multiple scans
+  const [whatsappNumber, setWhatsappNumber] = useState("");
 
   const quickContacts: QuickContact[] = [
     { id: '1', name: 'Thabo', phone: '+27123456789', avatar: '👨🏾' },
@@ -62,7 +65,18 @@ export default function PayScreen() {
     { id: '4', name: 'Petrol Station Shop', distance: '1.2km', category: 'Fuel & Snacks', rating: 4.5 },
   ];
 
-  const handlePayment = () => {
+  const userPhoneNumber = "+27123456789";
+
+  // useEffect(() => {
+  //   (async () => {
+  //     const res = await fetch('https://direlahackathon.xyz/');
+  //     Alert.alert(res.status + "");
+  //     const data = await res.text();
+  //   })();
+  // }, [paymentMethod]);
+
+  const handlePayment = async () => {
+    console.log("Reached payment handler")
     if (!paymentMethod) {
       Alert.alert('Select Payment Method', 'Please choose a payment method first');
       return;
@@ -80,6 +94,24 @@ export default function PayScreen() {
       timestamp: new Date().toISOString(),
     };
 
+    if (paymentMethod === 'whatsapp') {
+        const otp = Math.floor(100000 + Math.random() * 900000);
+
+        const res = await fetch('https://direlahackathon.xyz/otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            paymentTo: `+27${whatsappNumber}`,
+            otp,
+            amount,
+            paymentFrom: `+27${whatsappNumber}`
+          })
+        });
+
+        await res.json();
+        console.log("Request sent to WhatsApp");
+    }
+
     // Simulate Interledger processing for other payment methods
     Alert.alert(
       'Payment Initiated',
@@ -92,6 +124,8 @@ export default function PayScreen() {
       ]
     );
   };
+
+  const [showWhatsAppLinkGenerator, setShowWhatsAppLinkGenerator] = useState(false);
 
   const handleQRPaymentComplete = (result: any) => {
     setShowQRScanner(false);
@@ -113,6 +147,7 @@ export default function PayScreen() {
     title: string, 
     description: string 
   }) => (
+    
     <TouchableOpacity
       style={[
         styles.methodButton,
@@ -124,6 +159,7 @@ export default function PayScreen() {
           setShowQRScanner(true);
         } else {
           // Select other payment methods normally
+          setShowWhatsAppLinkGenerator(true);
           setPaymentMethod(method);
         }
       }}
@@ -183,14 +219,14 @@ export default function PayScreen() {
 
     try {
       // Check if user has completed authorization by trying to complete the payment
-      const response = await fetch('http://192.168.10.95:3001/api/payment/complete', {
+      const response = await fetch('http://196.47.226.189:3001/api/payment/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           continueToken,
           continueUri,
           quoteId,
-          description: `Dinela payment of ${paymentData.currency} ${paymentData.amount}`
+          description: `Direla payment of ${paymentData.currency} ${paymentData.amount}`
         })
       });
 
@@ -244,7 +280,7 @@ export default function PayScreen() {
       console.log('🔄 Starting Open Payments flow...');
       
              // Step 1: Create quote
-       const quoteResponse = await fetch('http://192.168.10.95:3001/api/payment/quote', {
+       const quoteResponse = await fetch('http://196.47.226.189:3001/api/payment/quote', {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({
@@ -281,7 +317,7 @@ export default function PayScreen() {
                 console.log('🔄 Processing payment...');
                 
                                  // Step 3: Send payment
-                 const paymentResponse = await fetch('http://192.168.10.95:3001/api/payment/send', {
+                 const paymentResponse = await fetch('http://196.47.226.189:3001/api/payment/send', {
                    method: 'POST',
                    headers: { 'Content-Type': 'application/json' },
                    body: JSON.stringify({
@@ -420,6 +456,30 @@ export default function PayScreen() {
       ]);
     }
   };
+
+  const handleWhatsAppLinkGenerated = async (data: any) => {
+    console.log('Link generated:', typeof data);
+    
+    const response = await fetch('https://direlahackathon.xyz/incoming-payment-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const { ok, payment } = await response.json();
+  
+    if(ok) {
+      processOpenPayment(payment);
+    }
+  };
+
+  if(showWhatsAppLinkGenerator) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
+        <WhatsAppLinkGenerator onLinkGenerated={handleWhatsAppLinkGenerated} />
+      </View>
+    )
+  }
 
   if (showQRScanner) {
     if (hasPermission === null) {
@@ -566,6 +626,27 @@ export default function PayScreen() {
           </View>
         </View>
 
+        {
+          paymentMethod === 'whatsapp' && (
+            <>
+            {/* WhatsApp Number Input */}
+            <View style={styles.amountContainer}>
+              <Text style={styles.amountLabel}>WhatsApp Number</Text>
+              <View style={styles.amountInputContainer}>
+                <Text style={styles.currencySymbol}>+27</Text>
+                <TextInput
+                  style={styles.amountInput}
+                  value={whatsappNumber}
+                  onChangeText={setWhatsappNumber}
+                  placeholder="WhatsApp Number"
+                  keyboardType="phone-pad"
+                  placeholderTextColor="#BDC3C7"
+                />
+              </View>
+            </View>
+            </>
+          ) 
+        }
         {/* Quick Contacts - Show when contacts method is selected */}
         {paymentMethod === 'contacts' && (
           <View style={styles.quickContactsContainer}>
@@ -631,7 +712,10 @@ export default function PayScreen() {
         </View>
 
         {/* Payment Button */}
-        <TouchableOpacity style={styles.payButton} onPress={handlePayment}>
+        <TouchableOpacity style={styles.payButton} onPress={() => {
+          console.log("Calling payment handler");
+          handlePayment();
+        }}>
           <Zap size={20} color="#FFFFFF" />
           <Text style={styles.payButtonText}>
             {paymentMethod === 'whatsapp' ? 'Send via WhatsApp' :
