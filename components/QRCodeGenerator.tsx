@@ -38,7 +38,7 @@ export default function QRCodeGenerator({ onQRGenerated }: QRCodeGeneratorProps)
       console.log('🔄 Generating QR code for amount:', amount);
       
       // Call backend to create real Open Payments incoming payment
-      const response = await fetch(`http://192.168.10.95:3001/api/qr/generate`, {
+      const response = await fetch(`http://196.47.237.170:3001/api/qr/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
