@@ -14,20 +14,19 @@ import QRCode from 'react-native-qrcode-svg';
 import { CheckCircle, Share2, Copy } from 'lucide-react-native';
 // Removed problematic import - using hardcoded URL
 
-interface QRCodeGeneratorProps {
-  onQRGenerated?: (qrData: any) => void;
+interface WhatsAppLinkGeneratorProps {
+  onLinkGenerated?: (link: any, phoneNumber: string) => void;
 }
 
-export default function QRCodeGenerator({ onQRGenerated }: QRCodeGeneratorProps) {
+export default function WhatsAppLinkGenerator({ onLinkGenerated }: WhatsAppLinkGeneratorProps) {
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [currency] = useState('ZAR');
-  const [qrData, setQrData] = useState<string | null>(null);
   const [paymentInfo, setPaymentInfo] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
-
-  const generateQRCode = async () => {
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const generateLink = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       Alert.alert('Error', 'Please enter a valid amount');
       return;
@@ -38,7 +37,7 @@ export default function QRCodeGenerator({ onQRGenerated }: QRCodeGeneratorProps)
       console.log('🔄 Generating QR code for amount:', amount);
       
       // Call backend to create real Open Payments incoming payment
-      const response = await fetch(`http://196.47.237.170:3001/api/qr/generate`, {
+      const response = await fetch(`http://196.47.226.189:3001/api/qr/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -60,26 +59,25 @@ export default function QRCodeGenerator({ onQRGenerated }: QRCodeGeneratorProps)
         throw new Error(result.error || 'Failed to generate QR code');
       }
 
-      console.log('QR Code generated:', result);
+      console.log('Link generated:', result);
       
-      setQrData(result.qrData);
       setPaymentInfo(result.payment);
       setGenerated(true);
       
-      if (onQRGenerated) {
-        onQRGenerated(result);
+      if (onLinkGenerated) {
+        onLinkGenerated(result, phoneNumber);
       }
 
       Alert.alert(
-        'QR Code Generated! 🎉',
+        'Link Generated! 🎉',
         `Real Open Payments incoming payment created for ${currency} ${amount}.\n\nPayment ID: ${result.payment.id?.split('/').pop() || 'Generated'}\n\nCustomers can now scan this QR code to pay!`,
         [{ text: 'OK' }]
       );
 
     } catch (error) {
-      console.error('QR generation failed:', error);
+      console.error('WhatsApp link generation failed:', error);
       Alert.alert(
-        'QR Generation Failed',
+        'WhatsApp Link Generation Failed',
         error instanceof Error ? error.message : 'Please check your internet connection and try again.'
       );
     } finally {
@@ -87,50 +85,20 @@ export default function QRCodeGenerator({ onQRGenerated }: QRCodeGeneratorProps)
     }
   };
 
-  const shareQRCode = async () => {
-    if (!qrData || !paymentInfo) return;
-
-    try {
-      const shareMessage = `💰 Payment Request\n\nAmount: ${currency} ${amount}\nDescription: ${description}\n\nScan the QR code to pay via Direla app using Open Payments.`;
-      
-      if (Platform.OS === 'web') {
-        // For web, copy to clipboard
-        await navigator.clipboard.writeText(shareMessage);
-        Alert.alert('Copied!', 'Payment details copied to clipboard');
-      } else {
-        // For mobile, use native share
-        await Share.share({
-          message: shareMessage,
-          title: 'Direla Payment Request'
-        });
-      }
-    } catch (error) {
-      console.error('Share failed:', error);
-      Alert.alert('Share Failed', 'Unable to share payment details');
-    }
-  };
-
-  const resetQRCode = () => {
-    setQrData(null);
-    setPaymentInfo(null);
-    setGenerated(false);
-    setAmount('');
-    setDescription('');
-  };
-
-  if (generated && qrData) {
+  if (generated && paymentInfo) {
     return (
       <View style={styles.generatedContainer}>
-        {/* QR Code Display */}
-        <View style={styles.qrContainer}>
-          <QRCode
-            value={qrData}
-            size={200}
-            backgroundColor="white"
-            color="black"
-          />
-        </View>
-
+        <TouchableOpacity 
+          style={styles.generateButton}
+          onPress={() => {
+            setGenerated(false);
+            setPaymentInfo(null);
+            setAmount('');
+            setDescription('');
+          }}
+        >
+          <Text style={styles.generateButtonText}>Back</Text>
+        </TouchableOpacity>
         {/* Payment Details */}
         <View style={styles.paymentDetails}>
           <Text style={styles.amountText}>{currency} {amount}</Text>
@@ -143,27 +111,9 @@ export default function QRCodeGenerator({ onQRGenerated }: QRCodeGeneratorProps)
           </View>
         </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.shareButton}
-            onPress={shareQRCode}
-          >
-            <Share2 size={20} color="#FFFFFF" />
-            <Text style={styles.shareButtonText}>Share</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={styles.newQRButton}
-            onPress={resetQRCode}
-          >
-            <Text style={styles.newQRButtonText}>New QR Code</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Instructions */}
         <Text style={styles.instructions}>
-          🔍 Customer should scan this QR code with their Direla app to make payment via Open Payments network.
+          🔍 Customer should use the link sent via WhatsApp to pay.
         </Text>
       </View>
     );
@@ -171,8 +121,8 @@ export default function QRCodeGenerator({ onQRGenerated }: QRCodeGeneratorProps)
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Generate Payment QR Code</Text>
-      <Text style={styles.subtitle}>Create a QR code for customers to scan and pay</Text>
+      <Text style={styles.title}>Generate Payment Link</Text>
+      <Text style={styles.subtitle}>Create a link for customers to pay</Text>
 
       {/* Amount Input */}
       <View style={styles.inputContainer}>
@@ -185,6 +135,21 @@ export default function QRCodeGenerator({ onQRGenerated }: QRCodeGeneratorProps)
             onChangeText={setAmount}
             placeholder="0.00"
             keyboardType="numeric"
+            placeholderTextColor="#BDC3C7"
+          />
+        </View>
+      </View>
+
+      <View style={styles.amountContainer}>
+        <Text style={styles.amountLabel}>WhatsApp Number</Text>
+        <View style={styles.amountInputContainer}>
+          <Text style={styles.currencySymbol}>+27</Text>
+          <TextInput
+            style={styles.amountInput}
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            placeholder="712345678"
+            keyboardType="phone-pad"
             placeholderTextColor="#BDC3C7"
           />
         </View>
@@ -206,13 +171,13 @@ export default function QRCodeGenerator({ onQRGenerated }: QRCodeGeneratorProps)
       {/* Generate Button */}
       <TouchableOpacity
         style={[styles.generateButton, loading && styles.generateButtonDisabled]}
-        onPress={generateQRCode}
+        onPress={generateLink}
         disabled={loading}
       >
         {loading ? (
           <ActivityIndicator color="#FFFFFF" size="small" />
         ) : (
-          <Text style={styles.generateButtonText}>Generate QR Code</Text>
+          <Text style={styles.generateButtonText}>Generate Link</Text>
         )}
       </TouchableOpacity>
 
@@ -220,7 +185,7 @@ export default function QRCodeGenerator({ onQRGenerated }: QRCodeGeneratorProps)
       <View style={styles.infoContainer}>
         <Text style={styles.infoText}>
           💡 This will create a secure payment request using Open Payments protocol. 
-          Customers can scan and pay from anywhere in the world.
+          Customers can pay from anywhere in the world.
         </Text>
       </View>
     </View>
@@ -394,5 +359,14 @@ const styles = StyleSheet.create({
     color: '#2980B9',
     lineHeight: 20,
     textAlign: 'center',
+  },
+  amountContainer: {
+    marginBottom: 20,
+  },
+  amountLabel: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#2C3E50',
+    marginBottom: 8,
   },
 }); 

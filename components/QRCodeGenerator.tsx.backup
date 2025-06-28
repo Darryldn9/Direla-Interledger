@@ -91,7 +91,7 @@ export default function QRCodeGenerator({ onQRGenerated }: QRCodeGeneratorProps)
     if (!qrData || !paymentInfo) return;
 
     try {
-      const shareMessage = `💰 Payment Request\n\nAmount: ${currency} ${amount}\nDescription: ${description}\n\nScan the QR code to pay via Dinela app using Open Payments.`;
+      const shareMessage = `💰 Payment Request\n\nAmount: ${currency} ${amount}\nDescription: ${description}\n\nScan the QR code to pay via Direla app using Open Payments.`;
       
       if (Platform.OS === 'web') {
         // For web, copy to clipboard
@@ -101,7 +101,7 @@ export default function QRCodeGenerator({ onQRGenerated }: QRCodeGeneratorProps)
         // For mobile, use native share
         await Share.share({
           message: shareMessage,
-          title: 'Dinela Payment Request'
+          title: 'Direla Payment Request'
         });
       }
     } catch (error) {
@@ -163,7 +163,7 @@ export default function QRCodeGenerator({ onQRGenerated }: QRCodeGeneratorProps)
 
         {/* Instructions */}
         <Text style={styles.instructions}>
-          🔍 Customer should scan this QR code with their Dinela app to make payment via Open Payments network.
+          🔍 Customer should scan this QR code with their Direla app to make payment via Open Payments network.
         </Text>
       </View>
     );
