@@ -62,35 +62,110 @@ export default function PayScreen() {
     { id: '4', name: 'Petrol Station Shop', distance: '1.2km', category: 'Fuel & Snacks', rating: 4.5 },
   ];
 
-  const handlePayment = () => {
-    if (!paymentMethod) {
-      Alert.alert('Select Payment Method', 'Please choose a payment method first');
-      return;
-    }
-
-    if (!amount || parseFloat(amount) <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
-      return;
-    }
-
-    const paymentData = {
-      method: paymentMethod,
-      amount: parseFloat(amount),
-      recipient,
-      timestamp: new Date().toISOString(),
+    const handlePayment = async () => {
+      // Handle "Send to Contact" by creating backend payment first (like QR generation)
+      if (paymentMethod === 'contacts') {
+        if (!amount || parseFloat(amount) <= 0) {
+          Alert.alert('Error', 'Please enter a valid amount');
+          return;
+        }
+        if (!recipient) {
+          Alert.alert('Error', 'Please select a contact or enter a phone number');
+          return;
+        }
+    
+        try {
+          console.log('🔄 Creating contact payment...');
+          
+          // Step 1: Create incoming payment on backend (same as QR generation)
+          const response = await fetch('http://196.47.237.170:3001/api/qr/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              amount: parseFloat(amount),
+              currency: 'ZAR',
+              description: `Payment to ${getContactName(recipient)}`
+            })
+          });
+    
+          if (!response.ok) {
+            throw new Error(`Failed to create payment: ${response.status}`);
+          }
+    
+          const backendResult = await response.json();
+          
+          if (!backendResult.success) {
+            throw new Error(backendResult.error || 'Failed to create payment');
+          }
+    
+          console.log('✅ Backend payment created:', backendResult);
+    
+          // Step 2: Parse the backend response (same as QR scanning)
+          const qrData = JSON.parse(backendResult.qrData);
+          
+          // Step 3: Add contact info and trigger existing payment flow
+          const paymentData = {
+            ...qrData,
+            contactName: getContactName(recipient),
+            paymentMethod: 'contact',
+            recipient: recipient
+          };
+    
+          console.log('📞 Processing contact payment:', paymentData);
+    
+          // Step 4: Use existing processOpenPayment function (same as QR scanning)
+          processOpenPayment(paymentData);
+    
+        } catch (error) {
+          console.error('Contact payment error:', error);
+          Alert.alert(
+            'Payment Failed', 
+            `Could not create contact payment: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            [{ text: 'OK' }]
+          );
+        }
+    
+        return; // Exit early for contacts
+      }
+    
+      // Handle other payment methods with alerts for now
+      if (!paymentMethod) {
+        Alert.alert('Select Payment Method', 'Please choose a payment method first');
+        return;
+      }
+    
+      if (!amount || parseFloat(amount) <= 0) {
+        Alert.alert('Error', 'Please enter a valid amount');
+        return;
+      }
+    
+      const paymentData = {
+        method: paymentMethod,
+        amount: parseFloat(amount),
+        recipient,
+        timestamp: new Date().toISOString(),
+      };
+    
+      // Simulate processing for WhatsApp and Tap (for demo)
+      Alert.alert(
+        'Payment Initiated',
+        `Processing R${amount} payment via ${paymentMethod.toUpperCase()}. Transaction will be processed through Interledger for optimal routing.`,
+        [
+          { text: 'OK', onPress: () => {
+            setAmount('');
+            setRecipient('');
+            setPaymentMethod('');
+          }}
+        ]
+      );
     };
 
-    // Simulate Interledger processing for other payment methods
-    Alert.alert(
-      'Payment Initiated',
-      `Processing R${amount} payment via ${paymentMethod.toUpperCase()}. Transaction will be processed through Interledger for optimal routing.`,
-      [
-        { text: 'OK', onPress: () => {
-          setAmount('');
-          setRecipient('');
-        }}
-      ]
-    );
+  // Helper function to get contact name from phone number
+  const getContactName = (phoneNumber: string): string => {
+    const contact = quickContacts.find(c => c.phone === phoneNumber);
+    return contact ? contact.name : phoneNumber;
   };
 
   const handleQRPaymentComplete = (result: any) => {
@@ -183,7 +258,7 @@ export default function PayScreen() {
 
     try {
       // Check if user has completed authorization by trying to complete the payment
-      const response = await fetch('http://192.168.10.95:3001/api/payment/complete', {
+      const response = await fetch('http://196.47.237.170:3001/api/payment/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -243,57 +318,88 @@ export default function PayScreen() {
     try {
       console.log('🔄 Starting Open Payments flow...');
       
-             // Step 1: Create quote
-       const quoteResponse = await fetch('http://192.168.10.95:3001/api/payment/quote', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({
-           walletAddress: paymentData.walletAddress || paymentData.paymentId?.split('/incoming-payments')[0],
-           amount: paymentData.amount,
-           assetCode: paymentData.currency,
-           assetScale: 2,
-           incomingPaymentId: paymentData.paymentId // Use existing incoming payment if available
-         })
-       });
-
+      // Step 1: Create quote
+      const quoteResponse = await fetch('http://196.47.237.170:3001/api/payment/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress: paymentData.walletAddress || paymentData.paymentId?.split('/incoming-payments')[0],
+          amount: paymentData.amount,
+          assetCode: paymentData.currency,
+          assetScale: 2,
+          incomingPaymentId: paymentData.paymentId // Use existing incoming payment if available
+        })
+      });
+  
       if (!quoteResponse.ok) {
         throw new Error(`Quote failed: ${quoteResponse.status}`);
       }
-
+  
       const quoteResult = await quoteResponse.json();
       console.log('✅ Quote created:', quoteResult);
+  
+      // Step 2: Show confirmation with contact-specific message
+      const walletName = (paymentData.walletAddress || paymentData.paymentId)?.split('/').pop() || 'Unknown';
 
-             // Step 2: Show confirmation with real quote details
-       const walletName = (paymentData.walletAddress || paymentData.paymentId)?.split('/').pop() || 'Unknown';
-       Alert.alert(
-         'Confirm Payment',
-         `💰 Amount: ${paymentData.currency} ${paymentData.amount}\n💸 Fee: ${quoteResult.quote.sendAmount.value / Math.pow(10, quoteResult.quote.sendAmount.assetScale)} ${quoteResult.quote.sendAmount.assetCode}\n🏦 To: ${walletName}\n\n✅ Quote ID: ${quoteResult.quote.id}\n🔗 Payment ID: ${paymentData.paymentId || 'Direct wallet'}`,
-                    [
-             { text: 'Cancel', onPress: () => {
-               scanningRef.current = false;
-               setScanned(false);
-               setShowQRScanner(false);
-             }},
-             {
-               text: 'Authorize Payment',
-               onPress: async () => {
+      // Parse quote amounts correctly
+const receiveAmount = quoteResult.quote.receiveAmount.value / Math.pow(10, quoteResult.quote.receiveAmount.assetScale);
+const sendAmount = quoteResult.quote.sendAmount.value / Math.pow(10, quoteResult.quote.sendAmount.assetScale);
+
+// Get currencies from quote (not from paymentData)
+const receiveCurrency = quoteResult.quote.receiveAmount.assetCode;
+const sendCurrency = quoteResult.quote.sendAmount.assetCode;
+
+// Different confirmation messages based on payment method and currency
+let confirmationMessage;
+
+if (paymentData.paymentMethod === 'contact') {
+  if (receiveCurrency === sendCurrency) {
+    // Same currency - show fee
+    const feeAmount = sendAmount - receiveAmount;
+    confirmationMessage = `👥 Send to Contact: ${paymentData.contactName}\n📞 Phone: ${paymentData.recipient}\n💰 Amount: ${receiveCurrency} ${receiveAmount.toFixed(2)}\n💸 Fee: ${sendCurrency} ${feeAmount.toFixed(2)}\n💳 You pay: ${sendCurrency} ${sendAmount.toFixed(2)}\n🏦 To: ${walletName}\n\n📞 Contact payment via Open Payments`;
+  } else {
+    // Cross-currency - show conversion
+    confirmationMessage = `👥 Send to Contact: ${paymentData.contactName}\n📞 Phone: ${paymentData.recipient}\n💰 They receive: ${receiveCurrency} ${receiveAmount.toFixed(2)}\n💳 You pay: ${sendCurrency} ${sendAmount.toFixed(2)}\n🔄 Currency conversion\n🏦 To: ${walletName}\n\n📞 Contact payment via Open Payments`;
+  }
+} else {
+  if (receiveCurrency === sendCurrency) {
+    // Same currency - show fee
+    const feeAmount = sendAmount - receiveAmount;
+    confirmationMessage = `💰 Amount: ${receiveCurrency} ${receiveAmount.toFixed(2)}\n💸 Fee: ${sendCurrency} ${feeAmount.toFixed(2)}\n💳 You pay: ${sendCurrency} ${sendAmount.toFixed(2)}\n🏦 To: ${walletName}\n\n✅ Quote ID: ${quoteResult.quote.id}\n🔗 Payment ID: ${paymentData.paymentId || 'Direct wallet'}`;
+  } else {
+    // Cross-currency - show conversion
+    confirmationMessage = `💰 They receive: ${receiveCurrency} ${receiveAmount.toFixed(2)}\n💳 You pay: ${sendCurrency} ${sendAmount.toFixed(2)}\n🔄 Currency conversion\n🏦 To: ${walletName}\n\n✅ Quote ID: ${quoteResult.quote.id}\n🔗 Payment ID: ${paymentData.paymentId || 'Direct wallet'}`;
+  }
+}
+      Alert.alert(
+        paymentData.paymentMethod === 'contact' ? 'Confirm Contact Payment' : 'Confirm Payment',
+        confirmationMessage,
+        [
+          { text: 'Cancel', onPress: () => {
+            scanningRef.current = false;
+            setScanned(false);
+            setShowQRScanner(false);
+          }},
+          {
+            text: 'Authorize Payment',
+            onPress: async () => {
               try {
                 console.log('🔄 Processing payment...');
                 
-                                 // Step 3: Send payment
-                 const paymentResponse = await fetch('http://192.168.10.95:3001/api/payment/send', {
-                   method: 'POST',
-                   headers: { 'Content-Type': 'application/json' },
-                   body: JSON.stringify({
-                     quoteId: quoteResult.quote.id,
-                     walletAddress: paymentData.walletAddress || paymentData.paymentId?.split('/incoming-payments')[0],
-                     incomingPaymentId: paymentData.paymentId
-                   })
-                 });
-
+                // Step 3: Send payment
+                const paymentResponse = await fetch('http://196.47.237.170:3001/api/payment/send', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    quoteId: quoteResult.quote.id,
+                    walletAddress: paymentData.walletAddress || paymentData.paymentId?.split('/incoming-payments')[0],
+                    incomingPaymentId: paymentData.paymentId
+                  })
+                });
+  
                 const paymentResult = await paymentResponse.json();
                 console.log('Payment result:', paymentResult);
-
+  
                 if (paymentResult.success) {
                   handleQRPaymentComplete({
                     success: true,
@@ -343,41 +449,41 @@ export default function PayScreen() {
                     ]
                   );
                 } else {
-                   Alert.alert('Payment Failed', paymentResult.error || 'Unknown error occurred', [
-                     { text: 'OK', onPress: () => {
-                       scanningRef.current = false;
-                       setScanned(false);
-                       setIsProcessing(false);
-                       setShowQRScanner(false);
-                     }}
-                   ]);
-                 }
-                             } catch (error) {
-                 console.error('Payment error:', error);
-                 Alert.alert('Payment Failed', `Error: ${error instanceof Error ? error.message : 'Unknown error'}`, [
-                   { text: 'OK', onPress: () => {
-                     scanningRef.current = false;
-                     setScanned(false);
-                     setIsProcessing(false);
-                     setShowQRScanner(false);
-                   }}
-                 ]);
-               }
+                  Alert.alert('Payment Failed', paymentResult.error || 'Unknown error occurred', [
+                    { text: 'OK', onPress: () => {
+                      scanningRef.current = false;
+                      setScanned(false);
+                      setIsProcessing(false);
+                      setShowQRScanner(false);
+                    }}
+                  ]);
+                }
+              } catch (error) {
+                console.error('Payment error:', error);
+                Alert.alert('Payment Failed', `Error: ${error instanceof Error ? error.message : 'Unknown error'}`, [
+                  { text: 'OK', onPress: () => {
+                    scanningRef.current = false;
+                    setScanned(false);
+                    setIsProcessing(false);
+                    setShowQRScanner(false);
+                  }}
+                ]);
+              }
             }
           }
         ]
       );
-         } catch (error) {
-       console.error('Open Payments error:', error);
-       Alert.alert('Payment Error', `Failed to process payment: ${error instanceof Error ? error.message : 'Unknown error'}`, [
-         { text: 'OK', onPress: () => {
-           scanningRef.current = false;
-           setScanned(false);
-           setIsProcessing(false);
-           setShowQRScanner(false);
-         }}
-       ]);
-     }
+    } catch (error) {
+      console.error('Open Payments error:', error);
+      Alert.alert('Payment Error', `Failed to process payment: ${error instanceof Error ? error.message : 'Unknown error'}`, [
+        { text: 'OK', onPress: () => {
+          scanningRef.current = false;
+          setScanned(false);
+          setIsProcessing(false);
+          setShowQRScanner(false);
+        }}
+      ]);
+    }
   };
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
