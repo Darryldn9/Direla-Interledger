@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -12,12 +13,35 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Configuration - Working Interledger credentials from old project
-const CONFIG = {
-  walletAddressUrl: 'https://ilp.interledger-test.dev/daddyd',
-  keyId: '2498c668-28a2-44e4-8d89-4cd29e886901',
-  privateKeyPath: path.join(__dirname, '..', 'private.key')
-};
+// Load configuration from environment variables
+function loadConfig() {
+  const requiredEnvVars = [
+    'OPEN_PAYMENTS_CLIENT_ADDRESS',
+    'OPEN_PAYMENTS_KEY_ID',
+    'OPEN_PAYMENTS_SECRET_KEY_PATH'
+  ];
+
+  const missing = requiredEnvVars.filter(key => !process.env[key]);
+  if (missing.length > 0) {
+    console.error('❌ Missing required environment variables:', missing.join(', '));
+    console.error('💡 Please create a .env file in the backend directory with your Open Payments credentials');
+    process.exit(1);
+  }
+
+  return {
+    // Customer wallet (for sending payments)
+    walletAddressUrl: process.env.OPEN_PAYMENTS_CLIENT_ADDRESS,
+    keyId: process.env.OPEN_PAYMENTS_KEY_ID,
+    privateKeyPath: path.isAbsolute(process.env.OPEN_PAYMENTS_SECRET_KEY_PATH) 
+      ? process.env.OPEN_PAYMENTS_SECRET_KEY_PATH 
+      : path.join(__dirname, '..', process.env.OPEN_PAYMENTS_SECRET_KEY_PATH),
+    
+    // Merchant wallet (for receiving payments) 
+    merchantWalletUrl: process.env.MERCHANT_WALLET_ADDRESS || process.env.OPEN_PAYMENTS_CLIENT_ADDRESS
+  };
+}
+
+const CONFIG = loadConfig();
 
 let authenticatedClient;
 let unauthenticatedClient;
@@ -27,9 +51,14 @@ async function initialize() {
   try {
     console.log('🔧 Initializing Open Payments Backend for Dinela...');
     
+    // Check if private key file exists
+    if (!fs.existsSync(CONFIG.privateKeyPath)) {
+      throw new Error(`Private key file not found at: ${CONFIG.privateKeyPath}`);
+    }
+    
     // Load private key
     const privateKey = fs.readFileSync(CONFIG.privateKeyPath, 'utf8').trim();
-    console.log('✅ Private key loaded');
+    console.log('✅ Private key loaded from:', CONFIG.privateKeyPath);
     
     // Create unauthenticated client for public operations
     unauthenticatedClient = await createUnauthenticatedClient({
@@ -47,9 +76,11 @@ async function initialize() {
     console.log('✅ Authenticated client created');
     
     console.log(`✅ Dinela Backend ready:
-   Wallet: ${CONFIG.walletAddressUrl}
+   Customer Wallet (sends): ${CONFIG.walletAddressUrl}
+   Merchant Wallet (receives): ${CONFIG.merchantWalletUrl}
    Key ID: ${CONFIG.keyId}
-   Port: ${PORT}`);
+   Port: ${PORT}
+   Environment: ${process.env.NODE_ENV || 'development'}`);
 
   } catch (error) {
     console.error('❌ Failed to initialize:', error.message);
@@ -59,6 +90,11 @@ async function initialize() {
 
 // Utility function to get local IP address
 function getLocalIPAddress() {
+  // Use environment variable if specified
+  if (process.env.BACKEND_HOST) {
+    return process.env.BACKEND_HOST;
+  }
+
   const interfaces = os.networkInterfaces();
   for (const devName in interfaces) {
     const iface = interfaces[devName];
@@ -79,9 +115,11 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
     service: 'Dinela Backend',
-    wallet: CONFIG.walletAddressUrl,
+    customerWallet: CONFIG.walletAddressUrl,
+    merchantWallet: CONFIG.merchantWalletUrl,
     keyId: CONFIG.keyId,
     mode: 'REAL_PAYMENTS',
+    environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString()
   });
 });
@@ -97,7 +135,9 @@ app.get('/api/server/info', (req, res) => {
       baseUrl: `http://${localIP}:${PORT}`,
       status: 'online',
       mode: 'REAL_PAYMENTS',
-      wallet: CONFIG.walletAddressUrl,
+      environment: process.env.NODE_ENV || 'development',
+      customerWallet: CONFIG.walletAddressUrl,
+      merchantWallet: CONFIG.merchantWalletUrl,
       endpoints: {
         health: `/health`,
         wallet: `/api/wallet/:address`,
@@ -150,14 +190,14 @@ app.post('/api/payment/incoming', async (req, res) => {
   try {
     const { amount, currency = 'USD', description = 'Dinela Payment' } = req.body;
     
-    console.log('💰 Creating incoming payment request:', { amount, currency, description });
+    console.log('💰 Creating incoming payment request for MERCHANT wallet:', { amount, currency, description });
 
-    // Get wallet address info
+    // Get MERCHANT wallet address info (for receiving payments)
     const walletAddress = await unauthenticatedClient.walletAddress.get({
-      url: CONFIG.walletAddressUrl
+      url: CONFIG.merchantWalletUrl
     });
 
-    // Request grant for incoming payment
+    // Request grant for incoming payment using CUSTOMER wallet credentials
     const grant = await authenticatedClient.grant.request(
       { url: walletAddress.authServer },
       {
@@ -172,7 +212,7 @@ app.post('/api/payment/incoming', async (req, res) => {
       }
     );
 
-    // Create incoming payment
+    // Create incoming payment on MERCHANT wallet
     const incomingPayment = await authenticatedClient.incomingPayment.create(
       {
         url: walletAddress.resourceServer,
@@ -239,7 +279,7 @@ app.post('/api/qr/generate', async (req, res) => {
     const qrData = {
       type: 'open-payments',
       paymentId: paymentData.payment.id,
-      walletAddress: CONFIG.walletAddressUrl,
+      walletAddress: CONFIG.merchantWalletUrl,  // QR points to MERCHANT wallet
       amount: amount,
       currency: currency,
       description: description,
@@ -354,11 +394,11 @@ app.post('/api/payment/quote', async (req, res) => {
         walletAddress: senderWallet.id,
         receiver: receiver,
         method: 'ilp',
-        debitAmount: {
-          value: (amount * Math.pow(10, senderWallet.assetScale)).toString(),
-          assetCode: senderWallet.assetCode,
-          assetScale: senderWallet.assetScale
-        }
+        // debitAmount: {
+        //   value: (amount * Math.pow(10, recipientWallet.assetScale)).toString(),
+        //   assetCode: senderWallet.assetCode,
+        //   assetScale: senderWallet.assetScale
+        // }
       }
     );
 
@@ -716,4 +756,4 @@ async function startServer() {
   }
 }
 
-startServer(); 
+startServer();

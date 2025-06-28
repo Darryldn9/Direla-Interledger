@@ -183,7 +183,7 @@ export default function PayScreen() {
 
     try {
       // Check if user has completed authorization by trying to complete the payment
-      const response = await fetch('http://192.168.10.95:3001/api/payment/complete', {
+      const response = await fetch('http://192.168.10.56:3001/api/payment/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -244,7 +244,7 @@ export default function PayScreen() {
       console.log('🔄 Starting Open Payments flow...');
       
              // Step 1: Create quote
-       const quoteResponse = await fetch('http://192.168.10.95:3001/api/payment/quote', {
+       const quoteResponse = await fetch('http://192.168.10.56:3001/api/payment/quote', {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({
@@ -281,7 +281,7 @@ export default function PayScreen() {
                 console.log('🔄 Processing payment...');
                 
                                  // Step 3: Send payment
-                 const paymentResponse = await fetch('http://192.168.10.95:3001/api/payment/send', {
+                 const paymentResponse = await fetch('http://192.168.10.56:3001/api/payment/send', {
                    method: 'POST',
                    headers: { 'Content-Type': 'application/json' },
                    body: JSON.stringify({

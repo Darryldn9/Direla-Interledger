@@ -1,4 +1,4 @@
-# Dinela - QR Code Payment Solution with Open Payments
+# Direla - QR Code Payment Solution with Open Payments
 
 A React Native/Expo mobile payment app featuring QR code generation and scanning with real Open Payments integration via Interledger Protocol. Perfect for merchants and customers to exchange payments seamlessly.
 
@@ -35,6 +35,7 @@ A React Native/Expo mobile payment app featuring QR code generation and scanning
 - **QR Codes**: react-native-qrcode-svg + expo-camera
 - **Navigation**: Expo Router
 - **Language**: TypeScript
+- **Database**: Supabase
 
 ## 🚀 Quick Start
 
